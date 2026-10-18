@@ -69,7 +69,7 @@ class User extends Authenticatable
         return match ($this->role)
         {
             Role::Admin => route('admin.index', absolute: false),
-            Role::Staff => route('staff.index', absolute: false),
+            Role::Staff => route('staff.orders.index', absolute: false),
             default => route('dashboard', absolute: false),
         };
     }

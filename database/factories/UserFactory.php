@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -30,6 +31,19 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * `role` tidak mass-assignable, jadi diset lewat state factory (yang memakai forceFill).
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => Role::Admin]);
+    }
+
+    public function staff(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => Role::Staff]);
     }
 
     /**

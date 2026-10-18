@@ -1,0 +1,35 @@
+// localStorage bisa melempar galat (mode privat, data situs diblokir), jadi semua akses dibungkus.
+
+export function readJson(key, fallback = null) {
+    try {
+        const raw = window.localStorage.getItem(key);
+
+        return raw === null ? fallback : JSON.parse(raw);
+    } catch {
+        return fallback;
+    }
+}
+
+export function writeJson(key, value) {
+    try {
+        window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+        // abaikan: halaman tetap jalan tanpa penyimpanan
+    }
+}
+
+const ORDERS_KEY = 'resto.orders.v1';
+const MAX_REMEMBERED = 30;
+
+/** Kode order yang pernah dibuat dari perangkat ini (untuk riwayat tamu). */
+export function getOrderCodes() {
+    const codes = readJson(ORDERS_KEY, []);
+
+    return Array.isArray(codes) ? codes.filter((c) => typeof c === 'string') : [];
+}
+
+export function rememberOrder(code) {
+    const codes = [code, ...getOrderCodes().filter((c) => c !== code)].slice(0, MAX_REMEMBERED);
+
+    writeJson(ORDERS_KEY, codes);
+}

@@ -1,36 +1,123 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\OptionController;
+use App\Http\Controllers\Admin\OptionGroupController;
+use App\Http\Controllers\Admin\TableController;
+use App\Http\Controllers\Admin\TrashController;
+use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Auth\PortalController;
+use App\Http\Controllers\Payments\MidtransNotificationController;
+use App\Http\Controllers\Staff\OrderBoardController;
+use App\Http\Controllers\Staff\RefundHistoryController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Visitor\CheckoutController;
+use App\Http\Controllers\Visitor\MenuController as VisitorMenuController;
+use App\Http\Controllers\Visitor\OnboardingController;
+use App\Http\Controllers\Visitor\OrderHistoryController;
+use App\Http\Controllers\Visitor\OrderStatusController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+// ---------------------------------------------------------------------------
+// Sisi pengunjung (guest dan pelanggan). Tidak ada link ke /admin atau /staff di sini (PRD G-13).
+// ---------------------------------------------------------------------------
+
+// Pilih meja: scan QR (/m/{kode}) atau ketik kode. Dibatasi supaya kode tidak bisa ditebak-tebak.
+Route::get('/', [OnboardingController::class, 'index'])->name('home');
+Route::post('/meja', [OnboardingController::class, 'enter'])->middleware('throttle:table-code')->name('table.enter');
+Route::get('/m/{code}', [OnboardingController::class, 'scan'])->middleware('throttle:table-code')->name('table.scan');
+Route::get('/ganti-meja', [OnboardingController::class, 'change'])->name('table.change');
+
+// Memesan: butuh meja yang sudah dipilih dan masih aktif.
+Route::middleware('table')->group(function () {
+    Route::get('/menu', [VisitorMenuController::class, 'index'])->name('menu');
+    Route::get('/keranjang', [VisitorMenuController::class, 'cart'])->name('cart');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Checkout dan pembayaran. Total selalu dihitung ulang di server.
+Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:checkout')->name('checkout.store');
+Route::post('/order/{order}/bayar', [CheckoutController::class, 'pay'])->middleware('throttle:checkout')->name('order.pay');
+
+// Status order, terbuka untuk yang tahu kode ordernya.
+Route::get('/order/{order}', [OrderStatusController::class, 'show'])->name('order.show');
+Route::get('/order/{order}/status', [OrderStatusController::class, 'status'])->middleware('throttle:60,1')->name('order.status');
+Route::post('/order/{order}/cek-pembayaran', [OrderStatusController::class, 'recheck'])->middleware('throttle:10,1')->name('order.recheck');
+
+// Webhook Midtrans: satu-satunya jalur yang menetapkan order lunas (tanpa CSRF, diamankan signature).
+Route::post('/payments/midtrans/notification', MidtransNotificationController::class)->name('payments.midtrans.notification');
+
+// Riwayat: tamu lewat kode order di perangkat, pelanggan lewat database.
+Route::get('/riwayat', [OrderHistoryController::class, 'index'])->name('riwayat');
+Route::post('/riwayat/lookup', [OrderHistoryController::class, 'lookup'])->middleware('throttle:30,1')->name('riwayat.lookup');
+Route::get('/riwayat/data', [OrderHistoryController::class, 'data'])->middleware('auth')->name('riwayat.data');
+
+// Login Google (khusus pelanggan).
+Route::middleware('guest')->group(function () {
+    Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+});
+
+// Halaman bawaan Breeze. Pelanggan yang baru login/daftar diarahkan ke riwayat.
+Route::get('/dashboard', fn () => redirect()->route('riwayat'))->middleware('auth')->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-    // Route ke admin
-    Route::middleware(['auth','role:admin'])
+// Area admin: auth dulu (tamu dilempar ke login), baru role (salah role = 403).
+Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
-    ->group(function() {
+    ->group(function () {
         Route::view('/', 'admin.index')->name('index');
+
+        Route::resource('categories', CategoryController::class)->except('show');
+        Route::resource('menus', MenuController::class)->except('show');
+
+        Route::resource('option-groups', OptionGroupController::class)->except('show');
+        Route::post('option-groups/{option_group}/options', [OptionController::class, 'store'])->name('options.store');
+        Route::put('options/{option}', [OptionController::class, 'update'])->name('options.update');
+        Route::delete('options/{option}', [OptionController::class, 'destroy'])->name('options.destroy');
+
+        Route::resource('tables', TableController::class)->except('show');
+        Route::post('tables/{table}/regenerate', [TableController::class, 'regenerate'])->name('tables.regenerate');
+        Route::get('tables/{table}/qr', [TableController::class, 'qr'])->name('tables.qr');
+        Route::get('tables/{table}/qr/download', [TableController::class, 'qrDownload'])->name('tables.qr.download');
+
+        Route::get('trash', [TrashController::class, 'index'])->name('trash.index');
+        Route::post('trash/{type}/{id}/restore', [TrashController::class, 'restore'])->name('trash.restore');
+        Route::delete('trash/{type}/{id}', [TrashController::class, 'forceDelete'])->name('trash.force');
     });
 
-    // Route ke Staff
-    Route::middleware(['auth', 'role:admin,staff'])
+// Area karyawan: admin juga boleh masuk (PRD: admin = semua yang bisa dilakukan role lain).
+Route::middleware(['auth', 'role:admin,staff'])
     ->prefix('staff')
     ->name('staff.')
-    ->group(function() {
-        Route::view('/', 'staff.index')->name('index');
+    ->group(function () {
+        Route::redirect('/', '/staff/orders')->name('index');
+
+        // Papan order (PRD K-01..K-07). Data dipolling tiap ±5 detik, aksi lewat fetch() dan membalas kartu terbaru.
+        Route::get('orders', [OrderBoardController::class, 'index'])->name('orders.index');
+        Route::get('orders/data', [OrderBoardController::class, 'data'])->name('orders.data');
+        Route::post('orders/{order}/start', [OrderBoardController::class, 'start'])->name('orders.start');
+        Route::post('orders/{order}/complete', [OrderBoardController::class, 'complete'])->name('orders.complete');
+        Route::post('orders/{order}/items/{item}/serve', [OrderBoardController::class, 'serve'])->name('orders.items.serve');
+        Route::post('orders/{order}/items/{item}/unavailable', [OrderBoardController::class, 'unavailable'])->name('orders.items.unavailable');
+
+        // Riwayat dan refund (kasir adalah karyawan: PRD tidak punya role kasir terpisah).
+        Route::get('riwayat', [RefundHistoryController::class, 'index'])->name('history.index');
+        Route::get('riwayat/data', [RefundHistoryController::class, 'data'])->name('history.data');
+        Route::post('riwayat/{order}/refund', [RefundHistoryController::class, 'refund'])->name('history.refund');
     });
+
+// Login khusus karyawan dan admin. Alamat ini tidak pernah ditautkan dari halaman pengunjung.
+Route::middleware('guest')->group(function () {
+    Route::get('/portal', [PortalController::class, 'show'])->name('portal.login');
+    Route::post('/portal', [PortalController::class, 'store']);
 });
+Route::post('/portal/logout', [PortalController::class, 'logout'])->middleware('auth')->name('portal.logout');
 
 require __DIR__.'/auth.php';
