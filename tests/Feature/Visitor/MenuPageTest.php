@@ -89,4 +89,13 @@ class MenuPageTest extends TestCase
         $this->visit($f)->assertSee('Harga sudah termasuk pajak')->assertDontSee('PB1')->assertDontSee('Biaya Layanan');
         $this->withSession(['table_id' => $f['table']->id])->get('/keranjang')->assertDontSee('PB1')->assertDontSee('Biaya Layanan');
     }
+
+    public function test_menu_photos_have_an_animated_skeleton_until_they_load(): void
+    {
+        $f = $this->menuFixture();
+        $f['mie']->update(['image' => 'menus/mie.jpg']);
+
+        $this->withSession(['table_id' => $f['table']->id])->get('/menu')->assertOk()
+            ->assertSee('x-ref="img"', false)->assertSee('animate-shimmer', false)->assertSee('menus/mie.jpg');
+    }
 }

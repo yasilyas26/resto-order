@@ -1,5 +1,7 @@
+import Alpine from 'alpinejs';
 import { formatClock, offsetFrom, secondsLeft } from '../lib/countdown';
 import { postJson } from '../lib/http';
+import { clearDraftOrder, rememberOrder } from '../lib/storage';
 
 /**
  * Halaman "Pilih Metode Pembayaran": pilihan dibuat lewat kelompok + dropdown ber-logo (bank dan e-wallet).
@@ -9,7 +11,7 @@ import { postJson } from '../lib/http';
  * Batas waktu bayar baru mulai berjalan saat tombol Bayar ditekan (server menetapkannya), lalu dihitung
  * mundur di sini. Menutup popup atau berganti metode tidak mengulang waktunya.
  */
-export default function paymentMethod({ payUrl, resultUrl, selected, group, choices, expiresAt, serverTime }) {
+export default function paymentMethod({ payUrl, resultUrl, code, selected, group, choices, expiresAt, serverTime }) {
     // Pilihan terakhir pelanggan diisikan ke dropdown kelompoknya; kelompok lain mulai dari pilihan pertama.
     const initialChoices = { ...choices, [group]: selected };
 
@@ -68,6 +70,11 @@ export default function paymentMethod({ payUrl, resultUrl, selected, group, choi
 
                     return;
                 }
+
+                // Pembayaran dimulai = checkout selesai: baru sekarang keranjang dikosongkan dan order masuk riwayat perangkat.
+                Alpine.store('cart').clear();
+                clearDraftOrder();
+                rememberOrder(code);
 
                 // Waktu bayar mulai (atau lanjut) dari sini, menurut server.
                 this._offset = offsetFrom(data.server_time);

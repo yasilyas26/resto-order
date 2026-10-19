@@ -21,6 +21,10 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->validated());
 
+        if (! $request->user()->isDirty()) {
+            return redirect()->route('profile.edit')->with('feedback', ['type' => 'info', 'title' => 'Tidak ada perubahan', 'message' => 'Nama dan emailmu masih sama, jadi tidak ada yang disimpan.']);
+        }
+
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }

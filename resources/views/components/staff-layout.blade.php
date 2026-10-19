@@ -38,9 +38,16 @@
                 @endforeach
             </nav>
 
-            <form method="POST" action="{{ route('portal.logout') }}" class="flex shrink-0 items-center gap-3">
+            <form method="POST" action="{{ route('portal.logout') }}" class="flex shrink-0 items-center gap-2 sm:gap-3">
                 @csrf
-                <span class="hidden text-sm text-gray-500 sm:inline">{{ auth()->user()->name }}</span>
+                {{-- Hanya admin yang melihat tombol ini; karyawan biasa tidak pernah. Middleware tetap yang mengamankan /admin. --}}
+                @if (auth()->user()->isAdmin())
+                    <a href="{{ route('admin.index') }}"
+                        class="inline-flex items-center gap-1.5 rounded-lg border-2 border-brand-600 bg-brand-50 px-3 py-1.5 text-sm font-bold text-brand-700 hover:bg-brand-100">
+                        <x-icon name="shield" class="h-4 w-4" /> <span class="hidden sm:inline">Dashboard</span> Admin
+                    </a>
+                @endif
+                <span class="hidden text-sm text-gray-500 lg:inline">{{ auth()->user()->name }}</span>
                 <button class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-bold text-brand-700 hover:bg-brand-50">
                     <x-icon name="logout" class="h-4 w-4" /> Keluar
                 </button>

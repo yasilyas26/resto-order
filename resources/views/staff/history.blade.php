@@ -36,6 +36,22 @@
             <span x-show="filter === 'done'">Belum ada order yang selesai.</span>
         </p>
 
+        {{-- Kerangka kartu saat daftar belum ada isinya dan sedang dimuat (ganti saringan) --}}
+        <ul x-show="loading && orders.length === 0" class="mt-5 space-y-3" role="status" aria-busy="true" aria-label="Memuat riwayat">
+            @foreach (range(1, 3) as $i)
+                <li class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <x-skeleton class="h-9 w-24 rounded-xl" />
+                            <div class="space-y-2"><x-skeleton class="h-4 w-32" /><x-skeleton class="h-3 w-24" /></div>
+                        </div>
+                        <div class="space-y-2 text-right"><x-skeleton class="ml-auto h-3 w-20" /><x-skeleton class="ml-auto h-5 w-24" /></div>
+                    </div>
+                    <div class="mt-4 grid gap-2 sm:grid-cols-2"><x-skeleton class="h-3 w-40" /><x-skeleton class="h-3 w-36" /></div>
+                </li>
+            @endforeach
+        </ul>
+
         <ul class="mt-5 space-y-3">
             <template x-for="order in orders" :key="order.code">
                 <li class="rounded-2xl border bg-white p-4 shadow-sm sm:p-5" :class="order.refund === 'needed' ? 'border-amber-300' : 'border-gray-200'">

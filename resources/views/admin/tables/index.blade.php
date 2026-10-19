@@ -28,10 +28,23 @@
 
     {{-- Cari + tombol tambah --}}
     <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <form method="GET" action="{{ route('admin.tables.index') }}" class="relative w-full max-w-md">
-            <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            <input type="search" name="q" value="{{ $search }}" placeholder="Cari nomor meja atau kode…"
-                class="w-full rounded-xl border-gray-200 bg-white py-2.5 pl-9 text-sm focus:border-brand-500 focus:ring-brand-500">
+        {{-- Cari dan urutkan dalam satu form: mengganti urutan tidak menghilangkan kata pencarian. --}}
+        <form method="GET" action="{{ route('admin.tables.index') }}" class="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-1">
+            <label class="relative w-full max-w-md flex-1 sm:min-w-[240px]">
+                <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                <input type="search" name="q" value="{{ $search }}" placeholder="Cari nomor meja atau kode…"
+                    class="w-full rounded-xl border-gray-200 bg-white py-2.5 pl-9 text-sm focus:border-brand-500 focus:ring-brand-500">
+            </label>
+
+            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                Urutkan
+                <select name="sort" onchange="this.form.submit()" aria-label="Urutkan daftar meja"
+                    class="rounded-xl border-gray-200 bg-white py-2.5 pl-3 pr-9 text-sm font-semibold focus:border-brand-500 focus:ring-brand-500">
+                    @foreach ($sorts as $key => $label)
+                        <option value="{{ $key }}" @selected($sort === $key)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </label>
         </form>
         <a href="{{ route('admin.tables.create') }}"
             class="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-700"><x-icon name="plus" class="h-4 w-4" /> Tambah Meja Baru</a>

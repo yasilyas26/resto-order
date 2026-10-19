@@ -52,6 +52,7 @@ class MenuCatalog
             'image' => $menu->imageUrl(),
             'category' => $categoryName,
             'available' => $menu->is_available,
+            'stock' => $menu->stock, // null = tidak dibatasi
             'groups' => $menu->effectiveOptionGroups()
                 ->filter(fn (OptionGroup $group) => $group->options->isNotEmpty())
                 ->map(fn (OptionGroup $group) => [

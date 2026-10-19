@@ -29,6 +29,7 @@ class CartPricer
 
         $errors = [];
         $lines = [];
+        $requested = []; // total jumlah per menu (menu yang sama bisa muncul di beberapa baris dengan opsi berbeda)
 
         foreach ($items as $item) {
             $menu = $menus->get($item['menu_id']);
@@ -41,6 +42,14 @@ class CartPricer
 
             if (! $menu->is_available) {
                 $errors[] = "{$menu->name} sedang habis. Hapus dari keranjang untuk melanjutkan.";
+
+                continue;
+            }
+
+            $requested[$menu->id] = ($requested[$menu->id] ?? 0) + (int) $item['qty'];
+
+            if ($menu->tracksStock() && $requested[$menu->id] > $menu->stock) {
+                $errors[] = "Stok {$menu->name} tersisa {$menu->stock}. Kurangi jumlahnya untuk melanjutkan.";
 
                 continue;
             }

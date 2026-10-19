@@ -83,7 +83,10 @@ export default function menuModal(menus) {
         },
 
         changeQty(delta) {
-            this.qty = clampQty(this.qty + delta);
+            // Tidak boleh melebihi sisa stok (null = tidak dibatasi). Server tetap memeriksa ulang.
+            const max = this.menu?.stock ?? Infinity;
+
+            this.qty = Math.min(clampQty(this.qty + delta), Math.max(1, max));
         },
 
         priceLabel(price) {

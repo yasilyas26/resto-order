@@ -34,6 +34,13 @@
     <x-input-error :messages="$errors->get('price')" class="mt-2" />
 </div>
 
+<div>
+    <x-input-label for="stock" value="Stok (kosongkan kalau tidak dibatasi)" />
+    <x-text-input id="stock" name="stock" type="number" min="0" step="1" class="mt-1 block w-full" :value="old('stock', $menu->stock ?? '')" placeholder="Tidak dibatasi" />
+    <p class="mt-1 text-xs text-gray-500">Stok berkurang otomatis setelah pesanan dibayar. Begitu 0, menu otomatis habis; isi stok lagi supaya tersedia kembali.</p>
+    <x-input-error :messages="$errors->get('stock')" class="mt-2" />
+</div>
+
 <div class="mt-4">
     <x-input-label for="image" value="Foto (JPG/PNG/WebP, maks 2 MB)" />
     @if (isset($menu) && $menu->image)

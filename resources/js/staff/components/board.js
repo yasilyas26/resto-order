@@ -80,6 +80,11 @@ export default function board({ dataUrl, baseUrl, initial, pollMs = 5000 }) {
             return filterOrders(this.orders, this.filter);
         },
 
+        /** Order dengan satu status dapur, dalam urutan papan (yang paling lama menunggu di atas). Tunduk pada saringan di atas papan. */
+        group(kind) {
+            return this.visible.filter((order) => order.kitchen === kind);
+        },
+
         get activeCount() {
             return this.counts.queued + this.counts.cooking;
         },

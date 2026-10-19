@@ -22,6 +22,7 @@ class Menu extends Model
         'price',
         'image',
         'is_available',
+        'stock',
         'skip_category_options',
     ];
 
@@ -30,6 +31,7 @@ class Menu extends Model
         return [
             'price' => 'integer',
             'is_available' => 'boolean',
+            'stock' => 'integer',
             'skip_category_options' => 'boolean',
         ];
     }
@@ -69,6 +71,31 @@ class Menu extends Model
             : $this->category->optionGroups;
 
         return $fromCategory->concat($this->optionGroups)->unique('id')->values();
+    }
+
+    /** Stok dilacak kalau angkanya diisi; null berarti tidak dibatasi. */
+    public function tracksStock(): bool
+    {
+        return $this->stock !== null;
+    }
+
+    /**
+     * Kurangi stok setelah pesanan dibayar. Tidak pernah di bawah 0, dan begitu mencapai 0 menu otomatis menjadi
+     * tidak tersedia. Dipanggil di dalam transaksi pembayaran (baris menu dikunci oleh pemanggil).
+     */
+    public function deductStock(int $qty): void
+    {
+        if (! $this->tracksStock()) {
+            return;
+        }
+
+        $this->stock = max(0, $this->stock - $qty);
+
+        if ($this->stock === 0) {
+            $this->is_available = false;
+        }
+
+        $this->save();
     }
 
     public function imageUrl(): ?string

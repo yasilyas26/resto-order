@@ -35,7 +35,13 @@
                 </select>
             </label>
 
-            <div x-ref="chart" class="relative mt-4 transition-opacity" :class="loading ? 'opacity-50' : ''" @mouseleave="hover = null">
+            <div x-ref="chart" class="relative mt-4" @mouseleave="hover = null" :aria-busy="loading">
+                {{-- Kerangka batang selama rentang baru dimuat (tingginya tetap, hanya penanda) --}}
+                <div x-show="loading" x-cloak class="absolute inset-0 z-10 flex items-end gap-2 bg-white px-14 pb-8 pt-3" role="status" aria-label="Memuat grafik">
+                    @foreach ([45, 70, 35, 85, 55, 95, 40, 65, 80, 50, 75, 60, 90, 45] as $h)
+                        <x-skeleton class="flex-1 rounded-b-none" style="height: {{ $h }}%" />
+                    @endforeach
+                </div>
                 {{-- Isi digambar dari JS (svgMarkup): Alpine tidak bisa x-for di dalam <svg>. --}}
                 <svg :width="chartW" :height="chartH" :viewBox="`0 0 ${chartW} ${chartH}`" class="block max-w-full" role="img" aria-label="Grafik omzet"
                     @mouseover="onChartMove($event)" x-html="svgMarkup"></svg>

@@ -356,4 +356,65 @@ class CheckoutTest extends TestCase
         $this->checkout(['items' => []])->assertStatus(429);
         $this->assertDatabaseCount('orders', 0);
     }
+
+    // ---- Draft: kembali ke keranjang lalu checkout lagi ---------------------------
+
+    public function test_checking_out_again_with_the_draft_code_updates_the_same_order_instead_of_piling_up_new_ones(): void
+    {
+        $first = $this->checkout()->assertCreated()->json('order_code');
+        $this->assertSame(43000, Order::firstOrFail()->total);
+
+        // Pelanggan kembali ke keranjang, mengubah isinya, lalu checkout lagi.
+        $second = $this->checkout([
+            'draft' => $first,
+            'items' => [['menu_id' => $this->f['esTeh']->id, 'qty' => 3, 'options' => []]],
+        ])->assertCreated()->json('order_code');
+
+        $this->assertSame($first, $second, 'order yang sama diperbarui');
+        $this->assertDatabaseCount('orders', 1);
+
+        $order = Order::firstOrFail()->load('items.options');
+        $this->assertSame(15000, $order->total);
+        $this->assertCount(1, $order->items);
+        $this->assertSame('Es Teh', $order->items->first()->menu_name);
+        $this->assertSame(3, $order->items->first()->qty);
+        $this->assertDatabaseCount('order_item_options', 0);
+    }
+
+    public function test_a_draft_is_not_reused_once_payment_has_started_or_when_it_is_not_theirs(): void
+    {
+        $first = $this->checkout()->assertCreated()->json('order_code');
+        $this->postJson("/order/{$first}/bayar", ['method' => 'bca_va'])->assertOk(); // pembayaran dimulai
+
+        $second = $this->checkout(['draft' => $first])->assertCreated()->json('order_code');
+        $this->assertNotSame($first, $second, 'order yang pembayarannya sudah dimulai tidak diubah');
+        $this->assertDatabaseCount('orders', 2);
+
+        // Kode ngawur atau milik meja lain diabaikan: selalu dibuat order baru.
+        $this->checkout(['draft' => 'ORD-TIDAKADA'])->assertCreated();
+        $this->assertDatabaseCount('orders', 3);
+
+        $otherTable = \App\Models\Table::create(['number' => 'Z9']);
+        $foreign = Order::create(['code' => 'ORD-ZZZZZZ', 'table_id' => $otherTable->id, 'customer_name' => 'Meja Z9', 'order_type' => 'dine_in', 'subtotal' => 1000, 'total' => 1000]);
+        $this->checkout(['draft' => $foreign->code])->assertCreated();
+        $this->assertSame(1000, $foreign->fresh()->total, 'order meja lain tidak tersentuh');
+    }
+
+    public function test_the_checkout_script_keeps_the_cart_and_the_skeleton_covers_the_wait(): void
+    {
+        $js = file_get_contents(resource_path('js/visitor/components/checkout.js'));
+        $this->assertStringNotContainsString('.clear()', $js, 'keranjang tidak dikosongkan saat order dibuat');
+
+        $this->withSession(['table_id' => $this->f['table']->id])->get('/keranjang')->assertOk()
+            ->assertSee('Menyiapkan pembayaran')->assertSee('animate-shimmer', false);
+    }
+
+    public function test_the_method_page_goes_back_to_the_cart_not_the_status_page(): void
+    {
+        $order = Order::create(['code' => 'ORD-ABCDEF', 'table_id' => $this->f['table']->id, 'customer_name' => 'Meja A07', 'order_type' => 'dine_in', 'subtotal' => 9500, 'total' => 9500]);
+
+        $this->get('/order/ORD-ABCDEF/bayar')->assertOk()
+            ->assertSee('Kembali ke keranjang pesanan')->assertSee('href="'.url('/keranjang').'"', false)
+            ->assertDontSee('Kembali ke status pesanan');
+    }
 }

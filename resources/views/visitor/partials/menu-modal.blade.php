@@ -28,7 +28,13 @@
                     <div class="relative h-48 shrink-0 bg-brand-50 sm:h-72">
                         <span class="absolute left-1/2 top-2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-full bg-white/90 shadow sm:hidden" aria-hidden="true"></span>
                         <template x-if="menu.image">
-                            <img :src="menu.image" :alt="menu.name" class="h-full w-full object-cover">
+                            {{-- :key supaya skeleton diulang tiap ganti menu --}}
+                            <div x-data="{ loaded: false }" :key="menu.id" class="relative h-full w-full">
+                                <x-skeleton x-show="!loaded" class="absolute inset-0 h-full w-full rounded-none" />
+                                <img :src="menu.image" :alt="menu.name" @load="loaded = true"
+                                    x-init="$nextTick(() => { if ($el.complete && $el.naturalWidth) loaded = true })"
+                                    class="h-full w-full object-cover transition-opacity duration-500" :class="loaded ? 'opacity-100' : 'opacity-0'">
+                            </div>
                         </template>
                         <template x-if="!menu.image">
                             <div class="flex h-full items-center justify-center text-brand-300">

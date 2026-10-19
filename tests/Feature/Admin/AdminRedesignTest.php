@@ -268,7 +268,7 @@ class AdminRedesignTest extends TestCase
     {
         $this->get('/admin')->assertSee('Ganti Nama')->assertSee('Ganti Kata Sandi')->assertSee('Keluar');
 
-        $this->patch('/admin/account/name', ['name' => '  Admin Baru  '])->assertRedirect()->assertSessionHas('status');
+        $this->patch('/admin/account/name', ['name' => '  Admin Baru  '])->assertRedirect()->assertSessionHas('name_changed');
         $this->assertSame('Admin Baru', auth()->user()->fresh()->name);
 
         $this->patch('/admin/account/name', ['name' => ''])->assertSessionHasErrorsIn('adminName', 'name');
@@ -288,7 +288,7 @@ class AdminRedesignTest extends TestCase
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('LamaSandi1', $admin->fresh()->password));
 
         $this->put('/admin/account/password', ['current_password' => 'LamaSandi1', 'password' => 'BaruSandi1', 'password_confirmation' => 'BaruSandi1'])
-            ->assertSessionHasNoErrors()->assertSessionHas('status');
+            ->assertSessionHasNoErrors()->assertSessionHas('password_changed');
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('BaruSandi1', $admin->fresh()->password));
     }
 
@@ -306,5 +306,59 @@ class AdminRedesignTest extends TestCase
         $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->filter(fn ($e) => str_contains($e->command, 'trash:purge'));
 
         $this->assertCount(1, $events);
+    }
+
+    public function test_loading_skeletons_exist_for_the_chart_and_the_staff_history_list(): void
+    {
+        $this->get('/admin')->assertOk()->assertSee('Memuat grafik')->assertSee('animate-pulse', false);
+
+        $this->actingAs(User::factory()->staff()->create())->get('/staff/riwayat')->assertOk()
+            ->assertSee('Memuat riwayat')->assertSee('animate-pulse', false);
+    }
+
+    public function test_every_admin_page_links_to_the_staff_board(): void
+    {
+        foreach (['/admin', '/admin/menus', '/admin/tables', '/admin/transactions', '/admin/trash'] as $url) {
+            $this->get($url)->assertOk()->assertSee('href="'.url('/staff/orders').'"', false)->assertSee('Karyawan');
+        }
+    }
+
+    public function test_admin_sees_a_success_modal_after_changing_the_name_or_the_password(): void
+    {
+        $this->withSession(['name_changed' => true])->get('/admin')->assertOk()->assertSee('Nama berhasil diganti')->assertSee('role="alertdialog"', false);
+        $this->withSession(['password_changed' => true])->get('/admin')->assertOk()->assertSee('Kata sandi berhasil diganti');
+
+        // Tanpa kabar di sesi, tidak ada modal.
+        $this->flushSession();
+        $this->actingAs(User::factory()->admin()->create())->get('/admin')->assertOk()->assertDontSee('Nama berhasil diganti')->assertDontSee('Kata sandi berhasil diganti');
+    }
+
+    public function test_changing_to_the_same_name_shows_a_no_change_modal(): void
+    {
+        $name = auth()->user()->name;
+
+        $this->patch('/admin/account/name', ['name' => "  {$name}  "])->assertRedirect()->assertSessionMissing('name_changed');
+
+        $this->get('/admin')->assertOk()->assertSee('Tidak ada perubahan')->assertSee('tidak ada yang disimpan');
+    }
+
+    public function test_a_failed_name_change_shows_a_failure_modal(): void
+    {
+        $this->from('/admin')->patch('/admin/account/name', ['name' => ''])->assertRedirect('/admin');
+
+        $this->get('/admin')->assertOk()->assertSee('Nama belum bisa diganti')->assertSee('role="alertdialog"', false);
+    }
+
+    public function test_a_failed_password_change_shows_a_failure_modal_and_the_same_password_a_no_change_modal(): void
+    {
+        $admin = User::factory()->admin()->create(['password' => bcrypt('LamaSandi1')]);
+        $this->actingAs($admin);
+
+        $this->from('/admin')->put('/admin/account/password', ['current_password' => 'salah', 'password' => 'BaruSandi1', 'password_confirmation' => 'BaruSandi1'])->assertRedirect('/admin');
+        $this->get('/admin')->assertOk()->assertSee('Kata sandi belum bisa diganti');
+
+        $this->flushSession();
+        $this->actingAs($admin)->from('/admin')->put('/admin/account/password', ['current_password' => 'LamaSandi1', 'password' => 'LamaSandi1', 'password_confirmation' => 'LamaSandi1'])->assertRedirect('/admin');
+        $this->get('/admin')->assertOk()->assertSee('Tidak ada perubahan')->assertSee('sama dengan yang sekarang')->assertDontSee('Kata sandi berhasil diganti');
     }
 }

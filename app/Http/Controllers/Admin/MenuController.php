@@ -49,6 +49,11 @@ class MenuController extends Controller
     /** Sakelar Tersedia/Habis langsung dari tabel. */
     public function toggleAvailability(Menu $menu)
     {
+        // Stok 0 tidak boleh dinyalakan dari sakelar: isi stoknya dulu (menu otomatis tersedia lagi).
+        if (! $menu->is_available && $menu->stock === 0) {
+            return back()->with('error', "Stok \"{$menu->name}\" 0. Isi stoknya dulu di form Ubah, nanti menu otomatis tersedia lagi.");
+        }
+
         $menu->update(['is_available' => ! $menu->is_available]);
 
         return back()->with('status', "\"{$menu->name}\" sekarang ".($menu->is_available ? 'tersedia.' : 'habis.'));
@@ -59,9 +64,27 @@ class MenuController extends Controller
         return view('admin.menus.create', $this->formData());
     }
 
+    /**
+     * Stok dan ketersediaan saling menjaga: stok 0 otomatis membuat menu habis, dan mengisi stok lagi dari 0
+     * membuat menu tersedia kembali (kecuali admin sendiri menonaktifkannya di form yang sama).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function syncAvailabilityWithStock(array $data, ?Menu $menu = null): array
+    {
+        if ($data['stock'] === 0) {
+            $data['is_available'] = false;
+        } elseif ($data['stock'] !== null && $menu?->stock === 0 && $menu->is_available === false) {
+            $data['is_available'] = true;
+        }
+
+        return $data;
+    }
+
     public function store(Request $request)
     {
-        $data = $this->validated($request);
+        $data = $this->syncAvailabilityWithStock($this->validated($request));
         $newImage = $request->hasFile('image') ? $request->file('image')->store('menus', 'public') : null;
 
         if ($newImage) {
@@ -92,7 +115,7 @@ class MenuController extends Controller
 
     public function update(Request $request, Menu $menu)
     {
-        $data = $this->validated($request);
+        $data = $this->syncAvailabilityWithStock($this->validated($request), $menu);
         $oldImage = $menu->image;
         $newImage = $request->hasFile('image') ? $request->file('image')->store('menus', 'public') : null;
 
@@ -147,12 +170,14 @@ class MenuController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
             'price' => ['required', 'integer', 'min:0', 'max:10000000'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'stock' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'option_groups' => ['nullable', 'array'],
             'option_groups.*' => ['integer', Rule::exists('option_groups', 'id')->whereNull('deleted_at')],
 
         ]);
 
         $data['is_available'] = $request->boolean('is_available');
+        $data['stock'] = $request->filled('stock') ? (int) $request->input('stock') : null; // kosong = tidak dibatasi
         $data['skip_category_options'] = $request->boolean('skip_category_options');
 
         // Bukan kolom menu: image dan grup opsi ditangani terpisah.

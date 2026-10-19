@@ -191,4 +191,90 @@ class ProfileAccountTest extends TestCase
             $this->get('/profile')->assertOk()->assertDontSee('Hapus akun');
         }
     }
+
+    // ---- Modal kabar berhasil dan konfirmasi hapus akun ---------------------------
+
+    public function test_profile_and_password_updates_show_a_success_modal(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('LamaSandi1')]);
+        $this->actingAs($user);
+
+        $this->withSession(['status' => 'profile-updated'])->get('/profile')->assertOk()
+            ->assertSee('Informasi akun berhasil diperbarui')->assertSee('role="alertdialog"', false);
+
+        $this->withSession(['status' => 'password-updated'])->get('/profile')->assertOk()
+            ->assertSee('Kata sandi berhasil diganti')->assertSee('Oke, mengerti');
+
+        // Tanpa kabar di sesi, tidak ada modal.
+        $this->flushSession();
+        $this->actingAs($user)->get('/profile')->assertOk()->assertDontSee('berhasil diperbarui')->assertDontSee('Kata sandi berhasil diganti');
+    }
+
+    public function test_deleting_an_account_asks_for_confirmation_in_a_modal_not_the_browser_dialog(): void
+    {
+        $this->actingAs(User::factory()->create(['password' => bcrypt('LamaSandi1')]));
+
+        $this->get('/profile')->assertOk()
+            ->assertSee('data-confirm-tone="hard"', false)->assertSee('Hapus akunmu secara permanen?')->assertSee('Ya, Hapus Akun')
+            ->assertSee('x-data="confirmDialog"', false)->assertDontSee('confirm(', false);
+    }
+
+    public function test_a_google_only_account_also_confirms_deletion_in_a_modal(): void
+    {
+        $this->actingAs(User::factory()->create(['password' => null, 'google_id' => 'g-123']));
+
+        $this->get('/profile')->assertOk()
+            ->assertSee('Lanjut ke Google')->assertSee('data-confirm-tone="hard"', false)->assertDontSee('confirm(', false);
+    }
+
+    // ---- Modal gagal dan "tidak ada perubahan" ------------------------------------
+
+    public function test_saving_the_profile_without_changes_shows_a_no_change_modal(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->from('/profile')->patch('/profile', ['name' => $user->name, 'email' => $user->email])->assertRedirect('/profile');
+
+        $this->get('/profile')->assertOk()->assertSee('Tidak ada perubahan')->assertSee('tidak ada yang disimpan')->assertDontSee('berhasil diperbarui');
+    }
+
+    public function test_an_invalid_profile_update_shows_a_failure_modal_with_the_reason(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->from('/profile')->patch('/profile', ['name' => 'Budi', 'email' => 'bukan-email'])->assertRedirect('/profile');
+
+        $this->get('/profile')->assertOk()->assertSee('Informasi akun belum bisa disimpan')->assertSee('role="alertdialog"', false);
+    }
+
+    public function test_a_wrong_current_password_shows_a_failure_modal(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('LamaSandi1')]);
+
+        $this->actingAs($user)->from('/profile')->put('/password', ['current_password' => 'salah', 'password' => 'BaruSandi1', 'password_confirmation' => 'BaruSandi1'])->assertRedirect('/profile');
+
+        $this->get('/profile')->assertOk()->assertSee('Kata sandi belum bisa diganti')->assertSee('Coba lagi');
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('LamaSandi1', $user->fresh()->password));
+    }
+
+    public function test_choosing_the_same_password_shows_a_no_change_modal_and_keeps_the_hash(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('LamaSandi1')]);
+        $hash = $user->password;
+
+        $this->actingAs($user)->from('/profile')->put('/password', ['current_password' => 'LamaSandi1', 'password' => 'LamaSandi1', 'password_confirmation' => 'LamaSandi1'])->assertRedirect('/profile');
+
+        $this->get('/profile')->assertOk()->assertSee('Tidak ada perubahan')->assertSee('sama dengan yang sekarang')->assertDontSee('Kata sandi berhasil diganti');
+        $this->assertSame($hash, $user->fresh()->password);
+    }
+
+    public function test_deleting_the_account_with_a_wrong_password_shows_a_failure_modal_and_keeps_the_account(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('LamaSandi1')]);
+
+        $this->actingAs($user)->from('/profile')->delete('/profile', ['password' => 'salah'])->assertRedirect('/profile');
+
+        $this->get('/profile')->assertOk()->assertSee('Akun belum bisa dihapus');
+        $this->assertNotNull($user->fresh());
+    }
 }

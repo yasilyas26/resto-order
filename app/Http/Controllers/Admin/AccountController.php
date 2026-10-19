@@ -17,9 +17,15 @@ class AccountController extends Controller
             'name' => ['required', 'string', 'max:255'],
         ]);
 
-        $request->user()->update(['name' => trim($data['name'])]);
+        $name = trim($data['name']);
 
-        return back()->with('status', 'Nama berhasil diganti.');
+        if ($name === $request->user()->name) {
+            return back()->with('feedback', ['type' => 'info', 'title' => 'Tidak ada perubahan', 'message' => 'Namamu masih sama dengan yang sekarang, jadi tidak ada yang disimpan.']);
+        }
+
+        $request->user()->update(['name' => $name]);
+
+        return back()->with('name_changed', true);
     }
 
     public function updatePassword(Request $request): RedirectResponse
@@ -32,8 +38,14 @@ class AccountController extends Controller
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
+        // Kata sandi baru yang sama dengan yang lama tidak mengubah apa pun.
+        if ($user->hasPassword() && Hash::check($data['password'], $user->password)) {
+            return back()->with('feedback', ['type' => 'info', 'title' => 'Tidak ada perubahan', 'message' => 'Kata sandi barumu sama dengan yang sekarang. Pakai kata sandi yang berbeda kalau ingin menggantinya.']);
+        }
+
         $user->update(['password' => Hash::make($data['password'])]);
 
-        return back()->with('status', 'Kata sandi berhasil diganti.');
+        // Ditampilkan sebagai modal di layout admin (bukan banner biasa), supaya jelas berhasilnya.
+        return back()->with('password_changed', true);
     }
 }

@@ -2,6 +2,7 @@
     $config = [
         'payUrl' => route('order.pay', $order),
         'resultUrl' => route('order.result', $order),
+        'code' => $order->code,
         'selected' => $selected,
         'group' => $selectedGroup,
         'choices' => collect($groups)->map(fn ($g) => array_key_first($g['options']))->all(),
@@ -12,8 +13,8 @@
 
 <x-visitor-layout :title="'Pilih Metode Bayar '.$order->code" bg="bg-gray-100">
     <main x-data="paymentMethod(@js($config))" class="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <a href="{{ route('order.show', $order) }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900">
-            <x-icon name="arrow-right" class="h-4 w-4 rotate-180" /> Kembali ke status pesanan
+        <a href="{{ route('cart') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900">
+            <x-icon name="arrow-right" class="h-4 w-4 rotate-180" /> Kembali ke keranjang pesanan
         </a>
 
         <h1 class="mt-3 text-xl font-extrabold tracking-tight sm:text-3xl">Pilih Metode Pembayaran</h1>

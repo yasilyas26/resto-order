@@ -47,6 +47,18 @@
                 @endif
 
                 {{-- Cara bayar: QR / nomor Virtual Account / kode minimarket, dari balasan Midtrans. Muncul begitu datanya ada. --}}
+                {{-- Kerangka petunjuk bayar selama pemeriksaan pertama ke Midtrans (biasanya 1-2 detik) --}}
+                <div x-show="checking && !instructions" class="mt-6 rounded-2xl border border-gray-200 p-5" role="status" aria-busy="true" aria-label="Menyiapkan petunjuk pembayaran">
+                    <x-skeleton class="mx-auto h-5 w-48" />
+                    <x-skeleton class="mx-auto mt-2 h-4 w-32" />
+                    <x-skeleton class="mx-auto mt-4 h-56 w-56 rounded-xl" />
+                    <div class="mt-4 space-y-2">
+                        <x-skeleton class="h-4 w-full" />
+                        <x-skeleton class="h-4 w-5/6" />
+                        <x-skeleton class="h-4 w-2/3" />
+                    </div>
+                </div>
+
                 <template x-if="instructions">
                     <div class="mt-6 rounded-2xl border border-gray-200 p-5 text-left">
                         <h2 class="text-center text-base font-extrabold" x-text="instructions.title"></h2>

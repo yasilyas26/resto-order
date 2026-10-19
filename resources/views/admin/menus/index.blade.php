@@ -54,7 +54,8 @@
                         <th class="{{ $th }}">Kategori</th>
                         <th class="{{ $th }}">Harga Dasar</th>
                         <th class="{{ $th }}">Grup Opsi Terkait</th>
-                        <th class="{{ $th }}">Status Stok</th>
+                        <th class="{{ $th }}">Stok</th>
+                        <th class="{{ $th }}">Status</th>
                         <th class="{{ $th }} text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -80,6 +81,14 @@
                                     @endforelse
                                 </div>
                             </td>
+                            <td class="whitespace-nowrap px-4 py-3">
+                                @if ($menu->tracksStock())
+                                    <span class="font-bold {{ $menu->stock === 0 ? 'text-red-600' : ($menu->stock <= 5 ? 'text-amber-600' : '') }}">{{ $menu->stock }}</span>
+                                    @if ($menu->stock > 0 && $menu->stock <= 5)<span class="ml-1 text-[11px] font-semibold text-amber-600">menipis</span>@endif
+                                @else
+                                    <span class="text-gray-400" title="Stok tidak dibatasi">&infin;</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">
                                 <form method="POST" action="{{ route('admin.menus.availability', $menu) }}" class="flex items-center gap-2">
                                     @csrf
@@ -100,7 +109,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Tidak ada menu yang cocok.</td></tr>
+                        <tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">Tidak ada menu yang cocok.</td></tr>
                     @endforelse
                 </tbody>
             </table>

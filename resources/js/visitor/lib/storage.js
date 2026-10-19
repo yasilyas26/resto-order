@@ -28,6 +28,27 @@ export function getOrderCodes() {
     return Array.isArray(codes) ? codes.filter((c) => typeof c === 'string') : [];
 }
 
+const DRAFT_KEY = 'resto.draftOrder.v1';
+
+/** Kode order yang sudah dibuat dari keranjang tapi belum dibayar (pembayarannya belum dimulai). */
+export function getDraftOrder() {
+    const code = readJson(DRAFT_KEY, null);
+
+    return typeof code === 'string' ? code : null;
+}
+
+export function setDraftOrder(code) {
+    writeJson(DRAFT_KEY, code);
+}
+
+export function clearDraftOrder() {
+    try {
+        window.localStorage.removeItem(DRAFT_KEY);
+    } catch {
+        // abaikan
+    }
+}
+
 export function rememberOrder(code) {
     const codes = [code, ...getOrderCodes().filter((c) => c !== code)].slice(0, MAX_REMEMBERED);
 

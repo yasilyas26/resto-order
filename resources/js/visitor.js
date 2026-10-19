@@ -3,6 +3,7 @@
 
 import Alpine from 'alpinejs';
 
+import confirmDialog from './admin/confirmDialog';
 import cartStore from './visitor/stores/cart';
 import checkout from './visitor/components/checkout';
 import history from './visitor/components/history';
@@ -23,6 +24,7 @@ Alpine.magic('lineTotal', () => lineTotal);
 Alpine.store('cart', cartStore());
 
 Alpine.data('menuModal', menuModal);
+Alpine.data('confirmDialog', confirmDialog);
 Alpine.data('scanner', scanner);
 Alpine.data('checkout', checkout);
 Alpine.data('orderStatus', orderStatus);

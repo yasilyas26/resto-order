@@ -7,10 +7,21 @@
         <h1 class="text-2xl font-extrabold tracking-tight">Profil Saya</h1>
         <p class="mt-1 text-sm text-gray-500">{{ $user->email }}</p>
 
-        @if (session('status') === 'profile-updated' || session('status') === 'password-updated')
-            <div class="mt-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
-                {{ session('status') === 'password-updated' ? 'Kata sandi diperbarui.' : 'Profil diperbarui.' }}
-            </div>
+        {{-- Kabar hasil aksi: berhasil, tidak ada perubahan, atau gagal (alasannya dari pesan validasi). --}}
+        @if (session('status') === 'password-updated')
+            <x-feedback-modal title="Kata sandi berhasil diganti" message="Mulai sekarang masuk dengan kata sandi yang baru." />
+        @elseif (session('status') === 'profile-updated')
+            <x-feedback-modal title="Informasi akun berhasil diperbarui" message="Perubahan pada nama dan emailmu sudah tersimpan." />
+        @endif
+        @if ($feedback = session('feedback'))
+            <x-feedback-modal :type="$feedback['type']" :title="$feedback['title']" :message="$feedback['message'] ?? null" />
+        @endif
+        @if ($errors->updatePassword->any())
+            <x-feedback-modal type="error" title="Kata sandi belum bisa diganti" :message="$errors->updatePassword->first()" />
+        @elseif ($errors->userDeletion->any())
+            <x-feedback-modal type="error" title="Akun belum bisa dihapus" :message="$errors->userDeletion->first()" />
+        @elseif ($errors->any())
+            <x-feedback-modal type="error" title="Informasi akun belum bisa disimpan" :message="$errors->first()" />
         @endif
 
         {{-- Informasi akun --}}
@@ -84,7 +95,9 @@
 
                 @if ($user->hasPassword())
                     <form method="POST" action="{{ route('profile.destroy') }}" class="mt-5 space-y-3"
-                        onsubmit="return confirm('Hapus akun secara permanen? Ini tidak bisa dibatalkan.')">
+                        data-confirm-tone="hard" data-confirm-title="Hapus akunmu secara permanen?"
+                        data-confirm="Akunmu dan datanya dihapus selamanya dan tidak bisa dipulihkan. Riwayat pesanan tetap tersimpan di restoran sebagai catatan keuangan, tapi tidak lagi terhubung denganmu."
+                        data-confirm-label="Ya, Hapus Akun">
                         @csrf
                         @method('DELETE')
                         <div>
@@ -99,11 +112,15 @@
                         Akunmu masuk lewat Google. Untuk konfirmasi, kamu akan diminta login ulang ke Google dan memilih akun yang sama.
                     </p>
                     <x-input-error :messages="$errors->userDeletion->get('google')" class="mt-2" />
-                    <a href="{{ route('auth.google.confirm-delete') }}"
-                        onclick="return confirm('Lanjut ke Google untuk konfirmasi? Setelah berhasil, akunmu dihapus permanen.')"
-                        class="mt-4 inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-red-500">
-                        Konfirmasi dengan Google dan hapus akun
-                    </a>
+                    {{-- Form GET (bukan link) supaya modal konfirmasi ikut berlaku --}}
+                    <form method="GET" action="{{ route('auth.google.confirm-delete') }}"
+                        data-confirm-tone="hard" data-confirm-title="Hapus akunmu secara permanen?"
+                        data-confirm="Kamu akan diminta login ulang ke Google untuk konfirmasi. Setelah berhasil, akunmu dihapus selamanya dan tidak bisa dipulihkan."
+                        data-confirm-label="Lanjut ke Google">
+                        <button class="mt-4 inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-red-500">
+                            Konfirmasi dengan Google dan hapus akun
+                        </button>
+                    </form>
                 @endif
             </section>
         @endif
@@ -113,4 +130,6 @@
             <button class="text-sm font-semibold text-gray-600 hover:underline">Keluar dari akun</button>
         </form>
     </main>
+
+    <x-confirm-dialog />
 </x-visitor-layout>

@@ -3,6 +3,7 @@
 namespace App\Services\Payments;
 
 use App\Enums\PaymentStatus;
+use App\Models\Menu;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\Ordering\QueueNumber;
@@ -90,6 +91,9 @@ class PaymentNotificationHandler
             app(QueueNumber::class)->assign($order, $order->paid_at);
             $order->save();
 
+            // Stok berkurang hanya setelah lunas, dan hanya sekali: order yang sudah lunas tidak pernah masuk ke sini lagi.
+            $this->deductStock($order);
+
             return;
         }
 
@@ -102,6 +106,19 @@ class PaymentNotificationHandler
             $order->payment_status = $new;
             $order->save();
         }
+    }
+
+    /** Kurangi stok tiap menu sebanyak jumlah yang dipesan (menu yang sama di beberapa baris dijumlahkan). */
+    private function deductStock(Order $order): void
+    {
+        $order->items()->whereNotNull('menu_id')->get()
+            ->groupBy('menu_id')
+            ->each(function ($items, $menuId) {
+                // Dikunci supaya dua pembayaran yang lunas bersamaan mengurangi stok bergantian, tidak saling menimpa.
+                $menu = Menu::withTrashed()->lockForUpdate()->find($menuId);
+
+                $menu?->deductStock((int) $items->sum('qty'));
+            });
     }
 
     private function grossAmount(array $payload): int

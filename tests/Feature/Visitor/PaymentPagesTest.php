@@ -500,4 +500,20 @@ class PaymentPagesTest extends TestCase
             ->assertSee('Transfer Virtual Account')->assertSee('BCA, BNI, BRI, Permata, CIMB Niaga, Mandiri')
             ->assertDontSee('Kamu memilih metodenya');
     }
+
+    public function test_the_waiting_page_has_a_skeleton_for_the_payment_instructions(): void
+    {
+        $this->get('/order/ORD-ABCDEF/hasil')->assertOk()
+            ->assertSee('Menyiapkan petunjuk pembayaran')->assertSee('animate-pulse', false);
+
+        // Hanya halaman "menunggu" yang punya kerangka itu.
+        $this->setStatus(PaymentStatus::Failed);
+        $this->get('/order/ORD-ABCDEF/hasil')->assertOk()->assertDontSee('Menyiapkan petunjuk pembayaran');
+    }
+
+    public function test_the_customer_history_page_has_a_loading_skeleton(): void
+    {
+        $this->withSession(['table_id' => $this->order->table_id])->get('/riwayat')->assertOk()
+            ->assertSee('Memuat riwayat')->assertSee('animate-pulse', false);
+    }
 }

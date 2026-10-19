@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Visitor;
 
 use App\Enums\OrderType;
+use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Table;
@@ -44,6 +45,8 @@ class CheckoutController extends Controller
 
         $data = $request->validate([
             'order_type' => ['required', Rule::enum(OrderType::class)],
+            // Kode order sebelumnya dari perangkat ini: kalau belum dibayar, isinya diperbarui (bukan dibuat ganda).
+            'draft' => ['nullable', 'string', 'max:20'],
             'items' => ['required', 'array', 'min:1', 'max:50'],
             'items.*.menu_id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1', 'max:50'],
@@ -56,7 +59,7 @@ class CheckoutController extends Controller
         ]);
 
         try {
-            $order = $placeOrder->execute($table, $request->user(), $data);
+            $order = $placeOrder->execute($table, $request->user(), $data, $this->draftOrder($data['draft'] ?? null, $table));
         } catch (InvalidCartException $e) {
             return response()->json(['message' => $e->getMessage(), 'errors' => ['items' => $e->errors]], 422);
         }
@@ -68,6 +71,20 @@ class CheckoutController extends Controller
             'order_url' => route('order.show', $order),
             'checkout_url' => route('order.checkout', $order),
         ], 201);
+    }
+
+    /** Order draft yang boleh diperbarui: meja sama, belum lunas, dan pembayarannya belum pernah dimulai. */
+    private function draftOrder(?string $code, Table $table): ?Order
+    {
+        if (blank($code)) {
+            return null;
+        }
+
+        return Order::where('code', $code)
+            ->where('table_id', $table->id)
+            ->where('payment_status', PaymentStatus::Pending)
+            ->whereDoesntHave('payments')
+            ->first();
     }
 
     /** Membuka pembayaran lagi untuk order yang belum lunas (popup ditutup, kedaluwarsa, atau gagal). */

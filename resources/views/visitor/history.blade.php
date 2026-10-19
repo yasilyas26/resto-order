@@ -19,7 +19,28 @@
                 <p class="mt-1 text-sm text-gray-500">Daftar transaksi pesanan makan di tempat &amp; bawa pulang terkini.</p>
             </section>
 
-            <p x-show="loading" class="rounded-2xl bg-white p-8 text-center text-sm text-gray-500">Memuat riwayat…</p>
+            {{-- Kerangka kartu selama riwayat dimuat --}}
+            <div x-show="loading" class="space-y-4" role="status" aria-busy="true" aria-label="Memuat riwayat">
+                @foreach (range(1, 3) as $i)
+                    <div class="rounded-2xl bg-white p-5 shadow-sm">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="space-y-2">
+                                <x-skeleton class="h-5 w-32" />
+                                <x-skeleton class="h-3 w-44" />
+                            </div>
+                            <x-skeleton class="h-7 w-24 rounded-full" />
+                        </div>
+                        <div class="mt-5 space-y-2.5 border-t border-gray-100 pt-4">
+                            <x-skeleton class="h-4 w-3/4" />
+                            <x-skeleton class="h-4 w-1/2" />
+                        </div>
+                        <div class="mt-5 flex items-center justify-between">
+                            <x-skeleton class="h-5 w-28" />
+                            <x-skeleton class="h-9 w-28 rounded-xl" />
+                        </div>
+                    </div>
+                @endforeach
+            </div>
 
             <div x-show="!loading && orders.length === 0" x-cloak class="rounded-2xl bg-white p-10 text-center shadow-sm">
                 <x-icon name="receipt" class="mx-auto h-12 w-12 text-brand-300" />

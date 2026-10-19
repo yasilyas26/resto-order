@@ -29,7 +29,12 @@
                             <div class="flex gap-4 border-b border-gray-100 py-5">
                                 <div class="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-brand-50 sm:h-24 sm:w-24">
                                     <template x-if="item.image">
-                                        <img :src="item.image" :alt="item.name" class="h-full w-full object-cover">
+                                        <div x-data="{ loaded: false }" class="relative h-full w-full">
+                                            <x-skeleton x-show="!loaded" class="absolute inset-0 h-full w-full rounded-none" />
+                                            <img :src="item.image" :alt="item.name" @load="loaded = true"
+                                                x-init="$nextTick(() => { if ($el.complete && $el.naturalWidth) loaded = true })"
+                                                class="h-full w-full object-cover transition-opacity duration-500" :class="loaded ? 'opacity-100' : 'opacity-0'">
+                                        </div>
                                     </template>
                                     <template x-if="!item.image">
                                         <div class="flex h-full items-center justify-center text-brand-300"><x-icon name="bowl" class="h-8 w-8" /></div>
@@ -150,6 +155,11 @@
                     </ul>
                 </section>
             </div>
+        </div>
+
+        {{-- Layar kerangka selama pesanan dibuat dan halaman Pilih Metode dimuat: menggantikan jeda kosong di antara keduanya. --}}
+        <div x-show="loading" x-cloak x-transition.opacity.duration.150ms>
+            @include('visitor.partials.checkout-skeleton')
         </div>
     </main>
 

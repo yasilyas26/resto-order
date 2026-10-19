@@ -23,6 +23,11 @@ class PasswordController extends Controller
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
+        // Kata sandi baru yang sama dengan yang lama tidak mengubah apa pun.
+        if ($user->hasPassword() && Hash::check($validated['password'], $user->password)) {
+            return back()->with('feedback', ['type' => 'info', 'title' => 'Tidak ada perubahan', 'message' => 'Kata sandi barumu sama dengan yang sekarang. Pakai kata sandi yang berbeda kalau ingin menggantinya.']);
+        }
+
         $user->update([
             'password' => Hash::make($validated['password']),
         ]);

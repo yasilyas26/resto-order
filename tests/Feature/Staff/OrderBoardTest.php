@@ -188,4 +188,32 @@ class OrderBoardTest extends TestCase
         $this->assertSame('Mie', $card['items'][0]['station']);
         $this->assertSame('Mie Pedas', $card['items'][0]['name']);
     }
+
+    public function test_the_board_groups_orders_by_status_from_top_to_bottom(): void
+    {
+        $this->actingAs(User::factory()->staff()->create());
+
+        $html = $this->get('/staff/orders')->assertOk()->getContent();
+
+        $queued = strpos($html, 'id="grup-queued"');
+        $cooking = strpos($html, 'id="grup-cooking"');
+        $done = strpos($html, 'id="grup-done"');
+
+        $this->assertNotFalse($queued);
+        $this->assertLessThan($cooking, $queued, 'Belum Dibuat di atas Sedang Dibuat');
+        $this->assertLessThan($done, $cooking, 'Sedang Dibuat di atas Selesai');
+        $this->assertStringContainsString('Belum Dibuat', $html);
+        $this->assertStringContainsString("group('queued')", $html);
+    }
+
+    public function test_only_an_admin_sees_the_button_back_to_the_admin_dashboard_on_staff_pages(): void
+    {
+        foreach (['/staff/orders', '/staff/riwayat'] as $url) {
+            $this->actingAs(User::factory()->admin()->create())->get($url)->assertOk()
+                ->assertSee('href="'.url('/admin').'"', false)->assertSee('Admin');
+
+            $this->actingAs(User::factory()->staff()->create())->get($url)->assertOk()
+                ->assertDontSee('href="'.url('/admin').'"', false);
+        }
+    }
 }

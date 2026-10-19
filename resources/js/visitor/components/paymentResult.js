@@ -16,6 +16,8 @@ export default function paymentResult({ state, statusUrl, recheckUrl, expiresAt,
         slow: false,
         now: Date.now(),
         instructions,
+        // true selama pemeriksaan pertama ke Midtrans berjalan dan petunjuk bayar belum ada: tampilkan kerangka.
+        checking: state === 'waiting' && !instructions,
         copied: '',
         _tries: 0,
         _offset: offsetFrom(serverTime),
@@ -81,6 +83,8 @@ export default function paymentResult({ state, statusUrl, recheckUrl, expiresAt,
                 this.instructions = data.instructions ?? this.instructions;
             } catch {
                 // koneksi putus sebentar: coba lagi di putaran berikutnya
+            } finally {
+                this.checking = false;
             }
         },
 

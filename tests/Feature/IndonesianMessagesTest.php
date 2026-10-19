@@ -60,4 +60,12 @@ class IndonesianMessagesTest extends TestCase
         $this->post('/register', ['name' => '', 'email' => '', 'password' => 'abc', 'password_confirmation' => 'abc'])
             ->assertSessionHasErrors(['name' => 'Nama wajib diisi.', 'email' => 'Email wajib diisi.']);
     }
+
+    public function test_password_rule_messages_are_short_and_friendly(): void
+    {
+        $this->assertSame('Kata sandi ini terlalu umum dan pernah bocor di internet, jadi kurang aman. Coba kombinasi lain yang lebih unik.', __('validation.password.uncompromised'));
+        $this->assertSame('Gunakan kombinasi huruf besar dan huruf kecil.', __('validation.password.mixed'));
+        $this->assertSame('Tambahkan minimal satu angka.', __('validation.password.numbers'));
+        $this->assertStringNotContainsString('kebocoran data', __('validation.password.uncompromised'));
+    }
 }

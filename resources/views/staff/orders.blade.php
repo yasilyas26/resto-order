@@ -45,8 +45,22 @@
             <p class="mt-1 text-sm">Order yang sudah dibayar pelanggan akan muncul otomatis dalam beberapa detik.</p>
         </div>
 
-        <div class="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            <template x-for="order in visible" :key="order.code">
+        {{-- Dikelompokkan per status, ditumpuk dari atas: Belum dibuat, Sedang dibuat, lalu Selesai. Kelompok kosong disembunyikan. --}}
+        @foreach ([
+            ['queued', 'Belum Dibuat', 'Menunggu dimasak', 'bg-amber-400'],
+            ['cooking', 'Sedang Dibuat', 'Sedang di dapur', 'bg-sky-500'],
+            ['done', 'Selesai', 'Sudah selesai dimasak', 'bg-slate-400'],
+        ] as [$kind, $title, $hint, $dot])
+        <section x-show="group('{{ $kind }}').length > 0" x-cloak class="mt-7 first:mt-5" aria-labelledby="grup-{{ $kind }}">
+            <div class="flex flex-wrap items-center gap-3 border-b border-gray-200 pb-3">
+                <span class="h-3 w-3 rounded-full {{ $dot }}"></span>
+                <h2 id="grup-{{ $kind }}" class="text-lg font-extrabold tracking-tight">{{ $title }}</h2>
+                <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-700" x-text="group('{{ $kind }}').length"></span>
+                <span class="text-xs text-gray-500">{{ $hint }}</span>
+            </div>
+
+        <div class="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <template x-for="order in group('{{ $kind }}')" :key="order.code">
                 <article class="flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm"
                     :class="order.kitchen === 'done' ? 'border-slate-200' : 'border-brand-200'">
 
@@ -161,5 +175,7 @@
                 </article>
             </template>
         </div>
+        </section>
+        @endforeach
     </main>
 </x-staff-layout>

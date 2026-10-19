@@ -40,6 +40,8 @@
                                         <div class="mb-1.5 flex flex-wrap items-center gap-1.5">
                                             @if ($soldOut)
                                                 <span class="rounded-full bg-brand-600 px-2.5 py-0.5 text-[11px] font-bold text-white">Habis</span>
+                                            @elseif ($menu->tracksStock() && $menu->stock <= 5)
+                                                <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">Sisa {{ $menu->stock }}</span>
                                             @endif
                                             @if ($menu->effectiveOptionGroups()->isNotEmpty())
                                                 <span class="text-[11px] font-semibold text-gray-500">{{ $menu->effectiveOptionGroups()->pluck('name')->join(' · ') }}</span>
@@ -54,8 +56,7 @@
 
                                     <div class="relative h-24 w-24 shrink-0 sm:h-28 sm:w-28">
                                         @if ($menu->image)
-                                            <img src="{{ $menu->imageUrl() }}" alt="{{ $menu->name }}" loading="lazy"
-                                                class="h-full w-full rounded-xl object-cover {{ $soldOut ? 'grayscale' : '' }}">
+                                            <x-visitor.photo :src="$menu->imageUrl()" :alt="$menu->name" class="rounded-xl" :img-class="$soldOut ? 'grayscale' : ''" />
                                         @else
                                             <div class="flex h-full w-full items-center justify-center rounded-xl bg-brand-50 text-brand-300">
                                                 <x-icon name="bowl" class="h-10 w-10" />

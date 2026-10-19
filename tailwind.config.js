@@ -12,6 +12,13 @@ export default {
 
     theme: {
         extend: {
+            keyframes: {
+                // Kilau yang menyapu dari kiri ke kanan di atas kotak skeleton.
+                shimmer: { '100%': { transform: 'translateX(100%)' } },
+            },
+            animation: {
+                shimmer: 'shimmer 1.4s ease-in-out infinite',
+            },
             fontFamily: {
                 // Inter dipakai halaman pelanggan; halaman admin/Breeze tetap Figtree lewat layout masing-masing.
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],

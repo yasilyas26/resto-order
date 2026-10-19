@@ -32,6 +32,12 @@ export default function refundHistory({ dataUrl, refundBase, initial, filter }) 
         },
 
         async setFilter(filter) {
+            // Daftar lama dikosongkan supaya kerangka (skeleton) tampil selama saringan baru dimuat, bukan data saringan sebelumnya.
+            if (filter !== this.filter) {
+                this.orders = [];
+                this.nextPage = null;
+            }
+
             this.filter = filter;
             await this.load(true);
         },
