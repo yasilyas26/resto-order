@@ -75,6 +75,6 @@
     @foreach ($group->options as $option)
         <form id="opt-{{ $option->id }}" method="POST" action="{{ route('admin.options.update', $option) }}">@csrf @method('PUT')</form>
         <form id="del-{{ $option->id }}" method="POST" action="{{ route('admin.options.destroy', $option) }}"
-            onsubmit="return confirm('Pindahkan opsi ke Sampah?')">@csrf @method('DELETE')</form>
+            data-confirm-tone="soft" data-confirm-title="Pindahkan ke Tempat Sampah?" data-confirm-name="{{ $option->name }}" data-confirm="Data ini bisa dipulihkan dari Tempat Sampah selama 30 hari sebelum dihapus permanen." data-confirm-label="Pindahkan ke Sampah">@csrf @method('DELETE')</form>
     @endforeach
 </x-admin-layout>

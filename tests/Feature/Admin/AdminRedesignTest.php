@@ -246,6 +246,22 @@ class AdminRedesignTest extends TestCase
         $this->assertDatabaseHas('tables', ['id' => $recent->id]);
     }
 
+    public function test_delete_actions_use_the_confirm_modal_not_the_browser_dialog(): void
+    {
+        $this->f['mie']->delete();
+        Table::create(['number' => 'T9'])->delete();
+        Table::create(['number' => 'T8']);
+
+        $trash = $this->get('/admin/trash')->assertOk();
+        $trash->assertSee('data-confirm-tone="hard"', false)->assertSee('Hapus Permanen', false);
+        $this->get('/admin/menus')->assertSee('data-confirm-tone="soft"', false)->assertSee('x-data="confirmDialog"', false);
+        $this->get('/admin/tables')->assertSee('data-confirm-title="Pindahkan ke Tempat Sampah?"', false);
+
+        foreach (['/admin/trash', '/admin/menus', '/admin/menus?tab=kategori', '/admin/menus?tab=opsi', '/admin/tables'] as $url) {
+            $this->get($url)->assertDontSee('confirm(', false);
+        }
+    }
+
     public function test_purge_is_scheduled_daily(): void
     {
         $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->filter(fn ($e) => str_contains($e->command, 'trash:purge'));

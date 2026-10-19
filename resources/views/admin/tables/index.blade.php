@@ -78,12 +78,12 @@
                         <td class="whitespace-nowrap px-4 py-4 text-right">
                             <a href="{{ route('admin.tables.edit', $table) }}" class="font-semibold text-brand-700 hover:underline">Ubah</a>
                             <form method="POST" action="{{ route('admin.tables.regenerate', $table) }}" class="inline"
-                                onsubmit="return confirm('Ganti kode meja? QR dan stiker lama langsung tidak berlaku.')">
+                                data-confirm-tone="soft" data-confirm-title="Ganti kode meja?" data-confirm-name="Meja {{ $table->number }}" data-confirm="QR dan stiker lama langsung tidak berlaku. Cetak ulang stikernya setelah ini." data-confirm-label="Ganti Kode">
                                 @csrf
                                 <button class="ml-3 font-semibold text-amber-700 hover:underline">Kode baru</button>
                             </form>
                             <form method="POST" action="{{ route('admin.tables.destroy', $table) }}" class="inline"
-                                onsubmit="return confirm('Pindahkan ke Sampah? QR meja ini langsung tidak berlaku.')">
+                                data-confirm-tone="soft" data-confirm-title="Pindahkan ke Tempat Sampah?" data-confirm-name="Meja {{ $table->number }}" data-confirm="QR meja ini langsung tidak berlaku. Meja bisa dipulihkan dari Tempat Sampah selama 30 hari." data-confirm-label="Pindahkan ke Sampah">
                                 @csrf
                                 @method('DELETE')
                                 <button class="ml-3 font-semibold text-red-600 hover:underline">Hapus</button>

@@ -92,7 +92,7 @@
                             </td>
                             <td class="whitespace-nowrap px-4 py-3 text-right">
                                 <a href="{{ route('admin.menus.edit', $menu) }}" class="font-semibold text-brand-700 hover:underline">Ubah</a>
-                                <form method="POST" action="{{ route('admin.menus.destroy', $menu) }}" class="inline" onsubmit="return confirm('Pindahkan ke Sampah?')">
+                                <form method="POST" action="{{ route('admin.menus.destroy', $menu) }}" class="inline" data-confirm-tone="soft" data-confirm-title="Pindahkan ke Tempat Sampah?" data-confirm-name="{{ $menu->name }}" data-confirm="Data ini bisa dipulihkan dari Tempat Sampah selama 30 hari sebelum dihapus permanen." data-confirm-label="Pindahkan ke Sampah">
                                     @csrf
                                     @method('DELETE')
                                     <button class="ml-3 font-semibold text-red-600 hover:underline">Hapus</button>
@@ -131,7 +131,7 @@
                             <td class="px-4 py-3 text-gray-600">{{ $category->optionGroups->pluck('name')->join(', ') ?: '—' }}</td>
                             <td class="whitespace-nowrap px-4 py-3 text-right">
                                 <a href="{{ route('admin.categories.edit', $category) }}" class="font-semibold text-brand-700 hover:underline">Ubah</a>
-                                <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" class="inline" onsubmit="return confirm('Pindahkan ke Sampah?')">
+                                <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" class="inline" data-confirm-tone="soft" data-confirm-title="Pindahkan ke Tempat Sampah?" data-confirm-name="{{ $category->name }}" data-confirm="Data ini bisa dipulihkan dari Tempat Sampah selama 30 hari sebelum dihapus permanen." data-confirm-label="Pindahkan ke Sampah">
                                     @csrf
                                     @method('DELETE')
                                     <button class="ml-3 font-semibold text-red-600 hover:underline">Hapus</button>
@@ -163,7 +163,7 @@
                             <td class="px-4 py-3">{{ $group->options_count }}</td>
                             <td class="whitespace-nowrap px-4 py-3 text-right">
                                 <a href="{{ route('admin.option-groups.edit', $group) }}" class="font-semibold text-brand-700 hover:underline">Kelola</a>
-                                <form method="POST" action="{{ route('admin.option-groups.destroy', $group) }}" class="inline" onsubmit="return confirm('Pindahkan grup ke Sampah?')">
+                                <form method="POST" action="{{ route('admin.option-groups.destroy', $group) }}" class="inline" data-confirm-tone="soft" data-confirm-title="Pindahkan ke Tempat Sampah?" data-confirm-name="{{ $group->name }}" data-confirm="Data ini bisa dipulihkan dari Tempat Sampah selama 30 hari sebelum dihapus permanen." data-confirm-label="Pindahkan ke Sampah">
                                     @csrf
                                     @method('DELETE')
                                     <button class="ml-3 font-semibold text-red-600 hover:underline">Hapus</button>

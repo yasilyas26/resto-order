@@ -11,7 +11,7 @@
 
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm">
         <p>Data di tempat sampah disimpan selama <b>{{ $retention }} hari</b> sebelum otomatis dihapus permanen oleh sistem.</p>
-        <form method="POST" action="{{ route('admin.trash.empty') }}" onsubmit="return confirm('Hapus permanen SEMUA data di sampah? Ini tidak bisa dibatalkan.')">
+        <form method="POST" action="{{ route('admin.trash.empty') }}" data-confirm-tone="hard" data-confirm-title="Kosongkan semua sampah?" data-confirm="Semua data di Tempat Sampah dihapus permanen dan tidak bisa dipulihkan. Data yang masih dirujuk data lain (misalnya menu yang pernah dipesan) otomatis dilewati." data-confirm-label="Hapus Permanen Semua">
             @csrf
             <button @disabled($counts['semua'] === 0)
                 class="inline-flex items-center gap-1.5 rounded-xl bg-red-100 px-4 py-2 text-sm font-bold text-brand-700 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50">
@@ -69,7 +69,7 @@
                                 <button @disabled($restoreBlock) class="rounded-lg border border-gray-200 px-3 py-1 text-xs font-bold text-brand-700 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40">Pulihkan</button>
                             </form>
                             <form method="POST" action="{{ route('admin.trash.force', [$row['slug'], $item->id]) }}" class="inline"
-                                onsubmit="return confirm('Hapus permanen? Ini tidak bisa dibatalkan.')">
+                                data-confirm-tone="hard" data-confirm-title="Hapus permanen?" data-confirm-name="{{ $item->trashLabel() }}" data-confirm="Data dihapus dari database dan tidak bisa dipulihkan lagi." data-confirm-label="Hapus Permanen">
                                 @csrf
                                 @method('DELETE')
                                 <button @disabled($forceBlock) class="ml-1 rounded-lg border border-brand-300 px-3 py-1 text-xs font-bold text-brand-700 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40">Hapus</button>
