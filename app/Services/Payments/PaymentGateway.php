@@ -21,4 +21,7 @@ interface PaymentGateway
      * @return array<string, mixed>|null
      */
     public function fetchStatus(string $midtransOrderId): ?array;
+
+    /** Batalkan transaksi yang masih menunggu bayar (dipakai saat pelanggan mengganti metode). Melempar PaymentGatewayException kalau ditolak. */
+    public function cancel(string $midtransOrderId): void;
 }

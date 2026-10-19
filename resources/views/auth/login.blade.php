@@ -44,9 +44,6 @@
 
             <div class="space-y-3">
                 <x-visitor.google-button />
-                <a href="{{ route('home') }}" class="block rounded-xl border border-gray-200 px-4 py-3 text-center text-sm font-medium text-gray-600 hover:bg-gray-50">
-                    Lanjut Memesan Sebagai Tamu
-                </a>
             </div>
 
             <div class="mt-6 border-t border-gray-100 pt-5 text-center text-sm text-gray-600">

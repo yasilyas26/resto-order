@@ -133,7 +133,7 @@ class OrderBoardTest extends TestCase
         $this->assertSame('A07', $card['table']);
         $this->assertSame('Dimas Anggara', $card['customer']);
         $this->assertSame('ORD-TEST01', $card['code']);
-        $this->assertSame('Dine In', $card['orderType']);
+        $this->assertSame('Makan di Tempat', $card['orderType']);
         $this->assertSame('queued', $card['kitchen']);
         $this->assertSame(0, $card['servedCount']);
         $this->assertSame(2, $card['servableCount']);

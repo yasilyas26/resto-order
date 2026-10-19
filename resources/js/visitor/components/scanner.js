@@ -1,13 +1,12 @@
 /**
  * Scan QR meja memakai kamera browser (html5-qrcode).
- * Kamera hanya jalan di HTTPS atau localhost; di luar itu pengunjung diarahkan mengetik kode.
+ * Kamera hanya jalan di HTTPS atau localhost; di luar itu pengunjung diarahkan memakai kamera bawaan HP.
  */
 export default function scanner() {
     return {
         open: false,
         starting: false,
         error: '',
-        code: '',
         _reader: null,
 
         async start() {
@@ -15,7 +14,7 @@ export default function scanner() {
 
             if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
                 this.open = true;
-                this.error = 'Kamera hanya bisa dipakai lewat koneksi aman (HTTPS). Silakan ketik kode meja di bawah.';
+                this.error = 'Kamera di halaman ini hanya bisa dipakai lewat koneksi aman (HTTPS). Scan QR meja memakai aplikasi kamera bawaan HP-mu.';
 
                 return;
             }
@@ -36,7 +35,7 @@ export default function scanner() {
                     () => {},
                 );
             } catch (e) {
-                this.error = 'Kamera tidak bisa dibuka. Izinkan akses kamera di browser, atau ketik kode meja di bawah.';
+                this.error = 'Kamera tidak bisa dibuka. Izinkan akses kamera di browser, atau scan QR meja memakai aplikasi kamera bawaan HP-mu.';
                 await this.stop();
             } finally {
                 this.starting = false;

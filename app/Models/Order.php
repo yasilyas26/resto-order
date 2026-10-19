@@ -43,10 +43,22 @@ class Order extends Model
             'total' => 'integer',
             'refund_amount' => 'integer',
             'paid_at' => 'datetime',
+            'queue_date' => 'date',
+            'queue_number' => 'integer',
             'completed_at' => 'datetime',
             'refunded_at' => 'datetime',
             'expires_at' => 'datetime',
         ];
+    }
+
+    /** Nomor antrean untuk dipanggil, mis. "A-007" (Makan di Tempat) atau "B-012" (Bawa Pulang). Null sebelum lunas. */
+    public function queueLabel(): ?string
+    {
+        if ($this->queue_number === null) {
+            return null;
+        }
+
+        return sprintf('%s-%03d', $this->order_type === OrderType::Takeaway ? 'B' : 'A', $this->queue_number);
     }
 
     /** URL publik memakai kode acak (/order/ORD-7F3K9Q), bukan id berurutan yang gampang ditebak. */
@@ -135,6 +147,7 @@ class Order extends Model
             'message' => $message ?? $stage->message(),
             'step' => $stage->step(),
             'paid' => $this->isPaid(),
+            'queue' => $this->queueLabel(),
             'payable' => $this->canBePaid(),
             'refund' => $this->refund_status->value,
             'refundAmount' => $this->refund_amount,
@@ -151,6 +164,7 @@ class Order extends Model
 
         return [
             'code' => $this->code,
+            'queue' => $this->queueLabel(),
             'url' => route('order.show', $this),
             // Bukan $this->table: di dalam model itu adalah properti bawaan Eloquent (nama tabel "orders").
             'table' => $this->getRelationValue('table')?->number,

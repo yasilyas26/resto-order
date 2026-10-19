@@ -23,7 +23,7 @@
     <p class="mt-1 text-sm text-gray-500">Otomatis dipakai semua menu di kategori ini (mis. Level pedas untuk kategori Mie). Menu tertentu bisa mematikannya lewat form menu.</p>
     @forelse ($optionGroups as $group)
         <label class="mt-2 flex items-start gap-2 text-sm">
-            <input type="checkbox" name="option_groups[]" value="{{ $group->id }}" class="mt-1 rounded border-gray-300"
+            <input type="checkbox" name="option_groups[]" value="{{ $group->id }}" class="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                 @checked(in_array($group->id, $selectedGroups))>
             <span>
                 <span class="font-medium">{{ $group->name }}</span>
@@ -39,5 +39,5 @@
 
 <div class="mt-6 flex items-center gap-4">
     <x-primary-button>Simpan</x-primary-button>
-    <a href="{{ route('admin.categories.index') }}" class="text-sm text-gray-600 underline">Batal</a>
+    <a href="{{ route('admin.categories.index') }}" class="text-sm font-semibold text-gray-600 hover:underline">Batal</a>
 </div>

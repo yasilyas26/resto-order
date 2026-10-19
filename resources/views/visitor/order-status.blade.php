@@ -6,6 +6,7 @@
         'statusUrl' => route('order.status', $order),
         'recheckUrl' => route('order.recheck', $order),
         'payUrl' => route('order.pay', $order),
+        'changeUrl' => route('order.change-method', $order),
         'initial' => $status,
     ];
 @endphp
@@ -72,6 +73,21 @@
                 </ol>
             </div>
 
+            {{-- Nomor antrean: baru ada setelah pembayaran terkonfirmasi --}}
+            <div x-show="status.queue" x-cloak class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-brand-600 bg-white p-4 sm:p-5">
+                <div>
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Nomor antreanmu</div>
+                    <div class="font-mono text-5xl font-extrabold tracking-wide text-brand-700" x-text="status.queue"></div>
+                </div>
+                <p class="max-w-xs text-sm text-gray-600">
+                    @if ($order->order_type === \App\Enums\OrderType::Takeaway)
+                        Tunggu nomormu dipanggil di kasir, lalu ambil pesananmu.
+                    @else
+                        Pesanan diantar ke <b>Meja {{ $order->table?->number }}</b>. Sebutkan nomor ini kalau ada yang perlu ditanyakan ke kasir.
+                    @endif
+                </p>
+            </div>
+
             {{-- Pesan sesuai tahap --}}
             <div class="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4 sm:p-5"
                 :class="['expired', 'failed'].includes(status.stage) ? 'bg-red-50' : 'bg-brand-50'">
@@ -88,10 +104,18 @@
                     </div>
                 </div>
 
-                <button type="button" x-show="status.payable" x-cloak @click="pay()" :disabled="busy"
-                    class="rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-brand-700 disabled:opacity-60">
-                    Bayar Sekarang
-                </button>
+                <div x-show="status.payable" x-cloak class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                    <button type="button" @click="changeMethod()" :disabled="busy"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60">
+                        <x-icon name="refresh" class="h-4 w-4" />
+                        Ganti metode bayar
+                    </button>
+                    <button type="button" @click="pay()" :disabled="busy"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60">
+                        <x-icon name="wallet" class="h-4 w-4" />
+                        <span x-text="busy ? 'Memproses…' : 'Bayar Sekarang'">Bayar Sekarang</span>
+                    </button>
+                </div>
             </div>
 
             {{-- Refund (diisi karyawan kalau ada item yang tidak tersedia) --}}

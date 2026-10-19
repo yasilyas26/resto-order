@@ -22,6 +22,7 @@ class BoardPresenter
 
         return [
             'code' => $order->code,
+            'queue' => $order->queueLabel(),
             'table' => $order->getRelationValue('table')?->number,
             'customer' => $order->customer_name,
             'orderType' => $order->order_type->label(),
@@ -56,6 +57,7 @@ class BoardPresenter
 
         return [
             'code' => $order->code,
+            'queue' => $order->queueLabel(),
             'table' => $order->getRelationValue('table')?->number,
             'customer' => $order->customer_name,
             'total' => $order->total,

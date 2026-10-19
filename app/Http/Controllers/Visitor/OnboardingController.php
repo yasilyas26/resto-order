@@ -10,7 +10,7 @@ use Illuminate\View\View;
 
 class OnboardingController extends Controller
 {
-    /** Halaman awal: pilih meja lewat scan QR atau ketik kode. Kalau meja sudah dipilih, langsung ke menu. */
+    /** Halaman awal: pilih meja lewat scan QR. Kalau meja sudah dipilih, langsung ke menu. */
     public function index(): View|RedirectResponse
     {
         if (Table::fromSession()) {
@@ -18,18 +18,6 @@ class OnboardingController extends Controller
         }
 
         return view('visitor.onboarding');
-    }
-
-    /** Kode yang diketik manual dari stiker meja. */
-    public function enter(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'code' => ['required', 'string', 'max:30'],
-        ], [
-            'code.required' => 'Masukkan kode meja dulu.',
-        ]);
-
-        return $this->select(Table::findActiveByCode($data['code']), withInput: true);
     }
 
     /** Hasil scan QR: /m/{kode}. */
@@ -46,13 +34,11 @@ class OnboardingController extends Controller
         return redirect()->route('home');
     }
 
-    private function select(?Table $table, bool $withInput = false): RedirectResponse
+    private function select(?Table $table): RedirectResponse
     {
         if (! $table) {
-            // Satu pesan untuk semua kemungkinan (salah ketik, meja nonaktif, kode lama), supaya kode tidak bisa ditebak-tebak.
-            $back = redirect()->route('home')->withErrors(['code' => 'Kode meja tidak ditemukan atau meja sedang tidak aktif.']);
-
-            return $withInput ? $back->withInput() : $back;
+            // Satu pesan untuk semua kemungkinan (QR salah, meja nonaktif, kode lama), supaya kode tidak bisa ditebak-tebak.
+            return redirect()->route('home')->withErrors(['code' => 'QR meja tidak dikenali atau meja sedang tidak aktif. Coba scan ulang.']);
         }
 
         session(['table_id' => $table->id]);

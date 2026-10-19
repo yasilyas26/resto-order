@@ -7,7 +7,7 @@
     @foreach ($sections as $section)
         <h3 class="mt-8 mb-2 font-semibold text-gray-800">{{ $section['title'] }}</h3>
 
-        <div class="overflow-x-auto bg-white shadow sm:rounded-lg">
+        <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
             <table class="w-full text-left text-sm">
                 <tbody>
                     @forelse ($section['items'] as $item)
@@ -29,13 +29,13 @@
                             <td class="px-4 py-3 text-right whitespace-nowrap">
                                 <form method="POST" action="{{ route('admin.trash.restore', [$section['slug'], $item->id]) }}" class="inline">
                                     @csrf
-                                    <button @disabled($restoreBlock) class="text-blue-600 underline disabled:cursor-not-allowed disabled:opacity-40">Pulihkan</button>
+                                    <button @disabled($restoreBlock) class="font-semibold text-brand-700 hover:underline disabled:cursor-not-allowed disabled:opacity-40">Pulihkan</button>
                                 </form>
                                 <form method="POST" action="{{ route('admin.trash.force', [$section['slug'], $item->id]) }}" class="inline"
                                     onsubmit="return confirm('Hapus permanen? Ini tidak bisa dibatalkan.')">
                                     @csrf
                                     @method('DELETE')
-                                    <button @disabled($forceBlock) class="ml-3 text-red-600 underline disabled:cursor-not-allowed disabled:opacity-40">Hapus permanen</button>
+                                    <button @disabled($forceBlock) class="ml-3 font-semibold text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-40">Hapus permanen</button>
                                 </form>
                             </td>
                         </tr>

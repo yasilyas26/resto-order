@@ -6,17 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Menu;
 use App\Models\OptionGroup;
-use App\Services\Menu\LevelGroupBuilder;
-use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class MenuController extends Controller
 {
     public function index()
     {
-        $menus = Menu::with(['category', 'optionGroups'])
+        $menus = Menu::with(['category.optionGroups', 'optionGroups'])
             ->orderBy('category_id')
             ->orderBy('name')
             ->get();
@@ -32,17 +32,27 @@ class MenuController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
+        $newImage = $request->hasFile('image') ? $request->file('image')->store('menus', 'public') : null;
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('menus', 'public');
+        if ($newImage) {
+            $data['image'] = $newImage;
         }
 
-        $menu = Menu::create($data);
-        $this->syncOptionGroups($menu, $request->input('option_groups', []));
-        $levels = $this->applyQuickLevels($menu, $request);
+        try {
+            // Menu dan pemasangan grup opsinya satu paket: gagal di tengah berarti tidak ada yang tersimpan.
+            DB::transaction(function () use ($data, $request) {
+                $menu = Menu::create($data);
+                $this->syncOptionGroups($menu, $request->input('option_groups', []));
+            });
+        } catch (Throwable $e) {
+            // Foto sudah terlanjur di storage (file tidak ikut transaksi), jadi dibuang supaya tidak yatim.
+            $this->deleteImage($newImage);
+
+            throw $e;
+        }
 
         return redirect()->route('admin.menus.index')
-            ->with('status', 'Menu ditambahkan.'.$levels);
+            ->with('status', 'Menu ditambahkan.');
     }
 
     public function edit(Menu $menu)
@@ -53,22 +63,34 @@ class MenuController extends Controller
     public function update(Request $request, Menu $menu)
     {
         $data = $this->validated($request);
+        $oldImage = $menu->image;
+        $newImage = $request->hasFile('image') ? $request->file('image')->store('menus', 'public') : null;
 
-        if ($request->hasFile('image')) {
-            // Foto lama tidak dirujuk lagi, jadi aman dibuang.
-            $this->deleteImage($menu->image);
-            $data['image'] = $request->file('image')->store('menus', 'public');
+        if ($newImage) {
+            $data['image'] = $newImage;
         } elseif ($request->boolean('remove_image')) {
-            $this->deleteImage($menu->image);
             $data['image'] = null;
         }
 
-        $menu->update($data);
-        $this->syncOptionGroups($menu, $request->input('option_groups', []));
-        $levels = $this->applyQuickLevels($menu, $request);
+        try {
+            DB::transaction(function () use ($menu, $data, $request) {
+                $menu->update($data);
+                $this->syncOptionGroups($menu, $request->input('option_groups', []));
+            });
+        } catch (Throwable $e) {
+            // Gagal: foto baru dibuang dan foto lama tetap utuh (masih dirujuk database).
+            $this->deleteImage($newImage);
+
+            throw $e;
+        }
+
+        // Foto lama baru dibuang setelah database berhasil, supaya tidak ada menu yang kehilangan fotonya.
+        if (array_key_exists('image', $data) && $oldImage !== $menu->image) {
+            $this->deleteImage($oldImage);
+        }
 
         return redirect()->route('admin.menus.index')
-            ->with('status', 'Menu diperbarui.'.$levels);
+            ->with('status', 'Menu diperbarui.');
     }
 
     public function destroy(Menu $menu)
@@ -98,65 +120,15 @@ class MenuController extends Controller
             'option_groups' => ['nullable', 'array'],
             'option_groups.*' => ['integer', Rule::exists('option_groups', 'id')->whereNull('deleted_at')],
 
-            // "Level cepat": aturan ini hanya berlaku kalau kotak "tambahkan level" dicentang.
-            'level_enabled' => ['nullable', 'boolean'],
-            'level_group_name' => ['exclude_unless:level_enabled,1', 'required', 'string', 'max:100'],
-            'level_prefix' => ['exclude_unless:level_enabled,1', 'required', 'string', 'max:50'],
-            'level_from' => ['exclude_unless:level_enabled,1', 'required', 'integer', 'min:0', 'max:100'],
-            'level_to' => [
-                'exclude_unless:level_enabled,1', 'required', 'integer', 'min:0', 'max:100', 'gte:level_from',
-                function (string $attribute, mixed $value, Closure $fail) use ($request) {
-                    if (is_numeric($value) && ($value - (int) $request->input('level_from') + 1) > LevelGroupBuilder::MAX_LEVELS) {
-                        $fail('Maksimal '.LevelGroupBuilder::MAX_LEVELS.' level sekali buat.');
-                    }
-                },
-            ],
-            'level_required' => ['nullable', 'boolean'],
-            'level_surcharge_from' => ['exclude_unless:level_enabled,1', 'nullable', 'integer', 'min:0', 'max:100'],
-            'level_surcharge' => ['exclude_unless:level_enabled,1', 'nullable', 'integer', 'min:0', 'max:1000000'],
-        ], [
-            'level_group_name.required' => 'Nama grup level wajib diisi.',
-            'level_prefix.required' => 'Awalan nama level wajib diisi.',
-            'level_from.required' => 'Isi level awal.',
-            'level_to.required' => 'Isi level akhir.',
-            'level_to.gte' => 'Level akhir tidak boleh lebih kecil dari level awal.',
         ]);
 
         $data['is_available'] = $request->boolean('is_available');
         $data['skip_category_options'] = $request->boolean('skip_category_options');
 
-        // Bukan kolom menu: image, grup opsi, dan level cepat ditangani terpisah.
-        foreach (array_keys($data) as $key) {
-            if (str_starts_with($key, 'level_')) {
-                unset($data[$key]);
-            }
-        }
+        // Bukan kolom menu: image dan grup opsi ditangani terpisah.
         unset($data['image'], $data['option_groups']);
 
         return $data;
-    }
-
-    /** Membuat dan memasang deretan level (mis. Level 0-8) kalau diminta di form. Mengembalikan kalimat untuk pesan sukses. */
-    private function applyQuickLevels(Menu $menu, Request $request): string
-    {
-        if (! $request->boolean('level_enabled')) {
-            return '';
-        }
-
-        $from = (int) $request->input('level_from');
-        $to = (int) $request->input('level_to');
-
-        $group = app(LevelGroupBuilder::class)->apply($menu, [
-            'group_name' => trim($request->input('level_group_name')),
-            'prefix' => trim($request->input('level_prefix')),
-            'from' => $from,
-            'to' => $to,
-            'required' => $request->boolean('level_required'),
-            'surcharge_from' => $request->filled('level_surcharge_from') ? (int) $request->input('level_surcharge_from') : null,
-            'surcharge' => (int) $request->input('level_surcharge', 0),
-        ]);
-
-        return " Level {$from}–{$to} dipasang lewat grup \"{$group->name}\".";
     }
 
     /**

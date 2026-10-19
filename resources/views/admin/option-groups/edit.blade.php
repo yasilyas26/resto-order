@@ -1,9 +1,9 @@
 @php
-    $input = 'rounded-md border-gray-300 shadow-sm text-sm';
+    $input = 'rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500';
 @endphp
 
 <x-admin-layout :title="'Kelola Grup: '.$group->name">
-    <form method="POST" action="{{ route('admin.option-groups.update', $group) }}" class="max-w-xl bg-white p-6 shadow sm:rounded-lg">
+    <form method="POST" action="{{ route('admin.option-groups.update', $group) }}" class="max-w-xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         @method('PUT')
         @include('admin.option-groups._form')
     </form>
@@ -20,9 +20,9 @@
         </div>
     @endif
 
-    <div class="overflow-x-auto bg-white shadow sm:rounded-lg">
+    <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
         <table class="w-full text-left text-sm">
-            <thead class="bg-gray-50 text-gray-600">
+            <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 <tr>
                     <th class="px-4 py-3">Nama</th>
                     <th class="px-4 py-3">Harga tambahan (Rp)</th>
@@ -33,24 +33,24 @@
             </thead>
             <tbody>
                 @foreach ($group->options as $option)
-                    <tr class="border-t">
+                    <tr class="border-t border-gray-100 hover:bg-gray-50">
                         <td class="px-4 py-2"><input form="opt-{{ $option->id }}" name="name" value="{{ $option->name }}" required class="{{ $input }} w-40"></td>
                         <td class="px-4 py-2"><input form="opt-{{ $option->id }}" name="extra_price" type="number" min="0" value="{{ $option->extra_price }}" class="{{ $input }} w-28"></td>
                         <td class="px-4 py-2"><input form="opt-{{ $option->id }}" name="sort" type="number" min="0" value="{{ $option->sort }}" class="{{ $input }} w-20"></td>
                         <td class="px-4 py-2">
                             <input form="opt-{{ $option->id }}" type="hidden" name="is_available" value="0">
-                            <input form="opt-{{ $option->id }}" type="checkbox" name="is_available" value="1" class="rounded border-gray-300" @checked($option->is_available)>
+                            <input form="opt-{{ $option->id }}" type="checkbox" name="is_available" value="1" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500" @checked($option->is_available)>
                         </td>
                         <td class="px-4 py-2 text-right whitespace-nowrap">
                             <input form="opt-{{ $option->id }}" type="hidden" name="_section" value="options">
-                            <button form="opt-{{ $option->id }}" class="text-blue-600 underline">Simpan</button>
-                            <button form="del-{{ $option->id }}" class="ml-3 text-red-600 underline">Hapus</button>
+                            <button form="opt-{{ $option->id }}" class="font-semibold text-brand-700 hover:underline">Simpan</button>
+                            <button form="del-{{ $option->id }}" class="ml-3 font-semibold text-red-600 hover:underline">Hapus</button>
                         </td>
                     </tr>
                 @endforeach
 
                 @if ($group->options->isEmpty())
-                    <tr class="border-t"><td colspan="5" class="px-4 py-4 text-center text-gray-500">Belum ada opsi.</td></tr>
+                    <tr class="border-t border-gray-100 hover:bg-gray-50"><td colspan="5" class="px-4 py-4 text-center text-gray-500">Belum ada opsi.</td></tr>
                 @endif
 
                 <tr class="border-t bg-gray-50">
@@ -59,11 +59,11 @@
                     <td class="px-4 py-2"><input form="opt-new" name="sort" type="number" min="0" value="{{ $group->options->count() }}" class="{{ $input }} w-20"></td>
                     <td class="px-4 py-2">
                         <input form="opt-new" type="hidden" name="is_available" value="0">
-                        <input form="opt-new" type="checkbox" name="is_available" value="1" class="rounded border-gray-300" checked>
+                        <input form="opt-new" type="checkbox" name="is_available" value="1" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500" checked>
                     </td>
                     <td class="px-4 py-2 text-right">
                         <input form="opt-new" type="hidden" name="_section" value="options">
-                        <button form="opt-new" class="rounded bg-gray-800 px-3 py-1 text-white">+ Tambah</button>
+                        <button form="opt-new" class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-brand-700">+ Tambah</button>
                     </td>
                 </tr>
             </tbody>

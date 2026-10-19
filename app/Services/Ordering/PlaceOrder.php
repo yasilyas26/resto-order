@@ -15,22 +15,23 @@ class PlaceOrder
     /**
      * Membuat order berstatus "pending" beserta item dan opsinya. Belum ada pembayaran di sini.
      *
-     * @param  array{customer_name: string, customer_contact?: ?string, order_type: string|OrderType, items: list<array<string, mixed>>}  $data
+     * @param  array{order_type: string|OrderType, items: list<array<string, mixed>>}  $data
      *
      * @throws InvalidCartException
      */
     public function execute(Table $table, ?User $user, array $data): Order
     {
         $priced = $this->pricer->price($data['items']);
+        $type = $data['order_type'] instanceof OrderType ? $data['order_type'] : OrderType::from($data['order_type']);
 
-        return DB::transaction(function () use ($table, $user, $data, $priced) {
+        return DB::transaction(function () use ($table, $user, $type, $priced) {
             $order = Order::create([
                 'code' => Order::generateCode(),
                 'table_id' => $table->id,
                 'user_id' => $user?->id,
-                'customer_name' => trim($data['customer_name']),
-                'customer_contact' => filled($data['customer_contact'] ?? null) ? trim($data['customer_contact']) : null,
-                'order_type' => $data['order_type'] instanceof OrderType ? $data['order_type'] : OrderType::from($data['order_type']),
+                // Pembeli tidak mengisi nama: dikenali dari akunnya kalau login, kalau tidak dari meja atau jenis order.
+                'customer_name' => $user?->name ?? ($type === OrderType::Takeaway ? 'Bawa Pulang' : "Meja {$table->number}"),
+                'order_type' => $type,
                 'subtotal' => $priced['subtotal'],
                 'total' => $priced['subtotal'], // harga menu sudah termasuk pajak, tidak ada biaya tambahan
             ]);

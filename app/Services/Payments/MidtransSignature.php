@@ -16,8 +16,14 @@ class MidtransSignature
             return false;
         }
 
-        $expected = hash('sha512', $payload['order_id'].$payload['status_code'].$payload['gross_amount'].$serverKey);
+        $expected = self::make($payload['order_id'], $payload['status_code'], $payload['gross_amount'], $serverKey);
 
         return hash_equals($expected, (string) $payload['signature_key']);
+    }
+
+    /** Rumus signature, satu tempat saja: dipakai untuk memeriksa notifikasi dan oleh perintah simulasi lokal. */
+    public static function make(string $orderId, string $statusCode, string $grossAmount, string $serverKey): string
+    {
+        return hash('sha512', $orderId.$statusCode.$grossAmount.$serverKey);
     }
 }

@@ -3,11 +3,22 @@
     @open-menu.window="open($event.detail)"
     @keydown.escape.window="close()">
 
-    <div x-show="menu" x-transition.opacity
+    <div x-show="menu"
+        x-transition:enter="transition-opacity ease-out duration-300 motion-reduce:transition-none"
+        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="transition-opacity ease-in duration-200 motion-reduce:transition-none"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
         class="fixed inset-0 z-50 flex items-end justify-center bg-gray-900/50 sm:items-center sm:p-4"
         @click.self="close()">
 
-        <div x-show="menu" x-transition
+        {{-- HP: lembar naik dari bawah layar. Layar lebar: muncul di tengah dengan zoom halus. --}}
+        <div x-show="menu"
+            x-transition:enter="transition ease-out duration-300 motion-reduce:transition-none"
+            x-transition:enter-start="translate-y-full sm:translate-y-4 sm:scale-95 sm:opacity-0"
+            x-transition:enter-end="translate-y-0 sm:scale-100 sm:opacity-100"
+            x-transition:leave="transition ease-in duration-200 motion-reduce:transition-none"
+            x-transition:leave-start="translate-y-0 sm:scale-100 sm:opacity-100"
+            x-transition:leave-end="translate-y-full sm:translate-y-4 sm:scale-95 sm:opacity-0"
             class="relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-3xl"
             role="dialog" aria-modal="true" :aria-label="menu ? menu.name : ''">
 
@@ -15,6 +26,7 @@
                 <div class="flex min-h-0 flex-1 flex-col">
                     {{-- Foto --}}
                     <div class="relative h-48 shrink-0 bg-brand-50 sm:h-72">
+                        <span class="absolute left-1/2 top-2 z-10 h-1.5 w-10 -translate-x-1/2 rounded-full bg-white/90 shadow sm:hidden" aria-hidden="true"></span>
                         <template x-if="menu.image">
                             <img :src="menu.image" :alt="menu.name" class="h-full w-full object-cover">
                         </template>

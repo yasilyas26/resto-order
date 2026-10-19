@@ -5,6 +5,7 @@ namespace App\Services\Payments;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\Ordering\QueueNumber;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -85,6 +86,7 @@ class PaymentNotificationHandler
         if ($new === PaymentStatus::Paid) {
             $order->payment_status = PaymentStatus::Paid;
             $order->paid_at = $this->paidAt($payload);
+            app(QueueNumber::class)->assign($order, $order->paid_at);
             $order->save();
 
             return;

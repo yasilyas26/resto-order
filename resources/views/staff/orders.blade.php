@@ -54,7 +54,10 @@
                     <div class="p-4" :class="order.kitchen === 'done' ? 'bg-slate-50' : 'bg-gradient-to-br from-brand-50 via-white to-white'">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="rounded-xl px-3 py-1.5 text-xl font-extrabold uppercase text-white"
+                                <span x-show="order.queue" class="rounded-xl border-2 bg-white px-3 py-1 font-mono text-xl font-extrabold tracking-wide"
+                                    :class="order.kitchen === 'done' ? 'border-slate-300 text-slate-700' : 'border-brand-600 text-brand-700'"
+                                    x-text="order.queue" title="Nomor antrean"></span>
+                                <span x-show="order.table" class="rounded-xl px-3 py-1.5 text-xl font-extrabold uppercase text-white"
                                     :class="order.kitchen === 'done' ? 'bg-slate-800' : 'bg-brand-700'"
                                     x-text="'Meja ' + order.table"></span>
                                 <span x-show="order.sequence > 1" x-text="'Order ke-' + order.sequence"

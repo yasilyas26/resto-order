@@ -2,13 +2,13 @@
 
 namespace App\Services\Menu;
 
-use App\Models\Menu;
 use App\Models\OptionGroup;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Membuat satu grup opsi berisi deretan level (mis. "Level Pedas": Level 0 sampai Level 8) sekaligus,
- * lalu memasangnya ke menu. Gunanya supaya admin tidak perlu membuat opsi satu per satu.
+ * Gunanya supaya admin tidak perlu membuat opsi satu per satu. Grup dipasang ke menu atau kategori terpisah,
+ * lewat form menu atau form kategori.
  *
  * Grup tetap grup biasa yang bisa dipakai ulang oleh menu lain (keputusan PRD): kalau grup dengan nama
  * yang sama sudah ada, dipakai lagi dan hanya level yang belum ada yang ditambahkan.
@@ -21,9 +21,9 @@ class LevelGroupBuilder
     /**
      * @param  array{group_name: string, prefix: string, from: int, to: int, required: bool, surcharge_from: ?int, surcharge: int}  $spec
      */
-    public function apply(Menu $menu, array $spec): OptionGroup
+    public function build(array $spec): OptionGroup
     {
-        return DB::transaction(function () use ($menu, $spec) {
+        return DB::transaction(function () use ($spec) {
             $group = OptionGroup::where('name', $spec['group_name'])->orderBy('id')->first()
                 ?? OptionGroup::create([
                     'name' => $spec['group_name'],
@@ -48,11 +48,6 @@ class LevelGroupBuilder
                     'sort' => $level,
                     'is_available' => true,
                 ]);
-            }
-
-            if (! $menu->optionGroups()->where('option_groups.id', $group->id)->exists()) {
-                $next = ((int) $menu->optionGroups()->max('menu_option_group.sort')) + 1;
-                $menu->optionGroups()->attach($group->id, ['sort' => $next]);
             }
 
             return $group;

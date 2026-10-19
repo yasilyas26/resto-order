@@ -23,21 +23,26 @@ use Illuminate\Support\Facades\Route;
 // Sisi pengunjung (guest dan pelanggan). Tidak ada link ke /admin atau /staff di sini (PRD G-13).
 // ---------------------------------------------------------------------------
 
-// Pilih meja: scan QR (/m/{kode}) atau ketik kode. Dibatasi supaya kode tidak bisa ditebak-tebak.
+// Pilih meja: hanya lewat scan QR (/m/{kode}). Dibatasi supaya kode tidak bisa ditebak-tebak.
 Route::get('/', [OnboardingController::class, 'index'])->name('home');
-Route::post('/meja', [OnboardingController::class, 'enter'])->middleware('throttle:table-code')->name('table.enter');
 Route::get('/m/{code}', [OnboardingController::class, 'scan'])->middleware('throttle:table-code')->name('table.scan');
 Route::get('/ganti-meja', [OnboardingController::class, 'change'])->name('table.change');
 
-// Memesan: butuh meja yang sudah dipilih dan masih aktif.
+// Memesan dan melihat riwayat: butuh meja yang sudah dipilih (scan QR atau kode manual) dan masih aktif.
+// Berlaku juga untuk pelanggan yang sudah login: tanpa meja, mereka diarahkan ke halaman pilih meja.
 Route::middleware('table')->group(function () {
     Route::get('/menu', [VisitorMenuController::class, 'index'])->name('menu');
     Route::get('/keranjang', [VisitorMenuController::class, 'cart'])->name('cart');
+
+    Route::get('/riwayat', [OrderHistoryController::class, 'index'])->name('riwayat');
+    Route::post('/riwayat/lookup', [OrderHistoryController::class, 'lookup'])->middleware('throttle:30,1')->name('riwayat.lookup');
+    Route::get('/riwayat/data', [OrderHistoryController::class, 'data'])->middleware('auth')->name('riwayat.data');
 });
 
 // Checkout dan pembayaran. Total selalu dihitung ulang di server.
 Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:checkout')->name('checkout.store');
 Route::post('/order/{order}/bayar', [CheckoutController::class, 'pay'])->middleware('throttle:checkout')->name('order.pay');
+Route::post('/order/{order}/ganti-metode', [CheckoutController::class, 'changeMethod'])->middleware('throttle:checkout')->name('order.change-method');
 
 // Status order, terbuka untuk yang tahu kode ordernya.
 Route::get('/order/{order}', [OrderStatusController::class, 'show'])->name('order.show');
@@ -47,16 +52,12 @@ Route::post('/order/{order}/cek-pembayaran', [OrderStatusController::class, 'rec
 // Webhook Midtrans: satu-satunya jalur yang menetapkan order lunas (tanpa CSRF, diamankan signature).
 Route::post('/payments/midtrans/notification', MidtransNotificationController::class)->name('payments.midtrans.notification');
 
-// Riwayat: tamu lewat kode order di perangkat, pelanggan lewat database.
-Route::get('/riwayat', [OrderHistoryController::class, 'index'])->name('riwayat');
-Route::post('/riwayat/lookup', [OrderHistoryController::class, 'lookup'])->middleware('throttle:30,1')->name('riwayat.lookup');
-Route::get('/riwayat/data', [OrderHistoryController::class, 'data'])->middleware('auth')->name('riwayat.data');
-
 // Login Google (khusus pelanggan).
-Route::middleware('guest')->group(function () {
-    Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
-    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
-});
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->middleware('guest')->name('auth.google');
+// Callback dipakai dua keperluan: login (tamu) dan konfirmasi hapus akun (sudah login), jadi tanpa middleware guest.
+// Alamatnya sama, jadi tidak perlu mendaftarkan redirect URI baru di Google Cloud Console.
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+Route::get('/auth/google/konfirmasi-hapus', [GoogleAuthController::class, 'confirmDelete'])->middleware('auth')->name('auth.google.confirm-delete');
 
 // Halaman bawaan Breeze. Pelanggan yang baru login/daftar diarahkan ke riwayat.
 Route::get('/dashboard', fn () => redirect()->route('riwayat'))->middleware('auth')->name('dashboard');
@@ -77,6 +78,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::resource('categories', CategoryController::class)->except('show');
         Route::resource('menus', MenuController::class)->except('show');
 
+        Route::post('option-groups/level', [OptionGroupController::class, 'storeLevels'])->name('option-groups.levels');
         Route::resource('option-groups', OptionGroupController::class)->except('show');
         Route::post('option-groups/{option_group}/options', [OptionController::class, 'store'])->name('options.store');
         Route::put('options/{option}', [OptionController::class, 'update'])->name('options.update');

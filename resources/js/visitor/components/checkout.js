@@ -1,26 +1,16 @@
 import Alpine from 'alpinejs';
 import { toPayload } from '../lib/cart-logic';
 import { errorMessages, postJson } from '../lib/http';
-import { readJson, rememberOrder, writeJson } from '../lib/storage';
-
-const CUSTOMER_KEY = 'resto.customer.v1';
+import { rememberOrder } from '../lib/storage';
 
 /** Form checkout: kirim keranjang ke server, lalu buka popup pembayaran Midtrans Snap. */
-export default function checkout({ url, defaultName = '' }) {
+export default function checkout({ url }) {
     return {
-        name: '',
-        contact: '',
         loading: false,
         errors: [],
 
-        init() {
-            const saved = readJson(CUSTOMER_KEY, {});
-            this.name = defaultName || saved?.name || '';
-            this.contact = saved?.contact || '';
-        },
-
         get canSubmit() {
-            return !this.loading && Alpine.store('cart').items.length > 0 && this.name.trim().length > 0;
+            return !this.loading && Alpine.store('cart').items.length > 0;
         },
 
         async submit() {
@@ -33,18 +23,10 @@ export default function checkout({ url, defaultName = '' }) {
                 return;
             }
 
-            if (!this.name.trim()) {
-                this.errors = ['Nama pemesan wajib diisi.'];
-
-                return;
-            }
-
             this.loading = true;
 
             try {
                 const { ok, status, data } = await postJson(url, {
-                    customer_name: this.name.trim(),
-                    customer_contact: this.contact.trim() || null,
                     order_type: cart.orderType,
                     items: toPayload(cart.items),
                 });
@@ -71,7 +53,6 @@ export default function checkout({ url, defaultName = '' }) {
                     return;
                 }
 
-                writeJson(CUSTOMER_KEY, { name: this.name.trim(), contact: this.contact.trim() });
                 this.openPayment(data);
             } catch {
                 this.errors = ['Tidak bisa menghubungi server. Periksa koneksi internetmu.'];

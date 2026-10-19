@@ -41,7 +41,8 @@
                 <li class="rounded-2xl border bg-white p-4 shadow-sm sm:p-5" :class="order.refund === 'needed' ? 'border-amber-300' : 'border-gray-200'">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-xl bg-slate-800 px-3 py-1 text-lg font-extrabold uppercase text-white" x-text="'Meja ' + order.table"></span>
+                            <span x-show="order.queue" class="rounded-xl border-2 border-slate-300 bg-white px-3 py-0.5 font-mono text-lg font-extrabold text-slate-700" x-text="order.queue" title="Nomor antrean"></span>
+                            <span x-show="order.table" class="rounded-xl bg-slate-800 px-3 py-1 text-lg font-extrabold uppercase text-white" x-text="'Meja ' + order.table"></span>
                             <div>
                                 <div class="font-bold" x-text="order.customer"></div>
                                 <div class="font-mono text-[11px] text-gray-500" x-text="'#' + order.code"></div>

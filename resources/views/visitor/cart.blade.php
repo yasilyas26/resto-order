@@ -1,5 +1,5 @@
 <x-visitor-layout title="Keranjang" bg="bg-gray-100">
-    <main x-data="checkout({ url: @js(route('checkout.store')), defaultName: @js(auth()->user()?->name ?? '') })"
+    <main x-data="checkout({ url: @js(route('checkout.store')) })"
         class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
 
         {{-- Keranjang kosong --}}
@@ -76,27 +76,18 @@
                     </a>
                 </section>
 
-                {{-- Detail pemesan --}}
+                {{-- Tanpa form nama: Makan di Tempat otomatis memakai nomor meja, Bawa Pulang memakai nomor antrean setelah bayar. --}}
                 <section class="rounded-2xl bg-white p-5 shadow-sm sm:p-7">
-                    <h2 class="flex items-center gap-2 text-lg font-bold">
-                        <x-icon name="user" class="h-5 w-5 text-brand-700" /> Detail Pemesan
-                    </h2>
-
-                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label for="customer-name" class="mb-1.5 block text-sm font-semibold">Nama Pemesan <span class="text-brand-600">*</span></label>
-                            <input id="customer-name" type="text" x-model="name" maxlength="100" autocomplete="name" placeholder="Nama yang dipanggil saat pesanan diantar"
-                                class="block w-full rounded-xl border-gray-200 text-sm placeholder-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-200">
-                            <p class="mt-1.5 text-xs text-gray-500">Nama ini akan dipanggil saat pesanan diantar ke Meja {{ $table->number }}.</p>
-                        </div>
-                        <div>
-                            <label for="customer-contact" class="mb-1.5 block text-sm font-semibold">Email / WhatsApp <span class="font-normal text-gray-400">(opsional)</span></label>
-                            <input id="customer-contact" type="text" x-model="contact" maxlength="100" autocomplete="email" placeholder="Untuk dihubungi kalau ada masalah"
-                                class="block w-full rounded-xl border-gray-200 text-sm placeholder-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-200">
-                        </div>
+                    <div x-show="$store.cart.orderType === 'dine_in'" class="flex items-center gap-3 rounded-xl bg-brand-50 p-4">
+                        <x-icon name="utensils" class="h-5 w-5 shrink-0 text-brand-700" />
+                        <p class="text-sm">Pesanan diantar ke <b>Meja {{ $table->number }}</b>.</p>
+                    </div>
+                    <div x-show="$store.cart.orderType !== 'dine_in'" x-cloak class="flex items-center gap-3 rounded-xl bg-brand-50 p-4">
+                        <x-icon name="bag" class="h-5 w-5 shrink-0 text-brand-700" />
+                        <p class="text-sm">Pesanan dibawa pulang. Kamu mendapat <b>nomor antrean</b> setelah pembayaran berhasil.</p>
                     </div>
 
-                    <div class="mt-5 flex gap-3 rounded-xl bg-indigo-50 p-4">
+                    <div class="mt-4 flex gap-3 rounded-xl bg-indigo-50 p-4">
                         <x-icon name="shield" class="mt-0.5 h-5 w-5 shrink-0 text-brand-700" />
                         <div class="text-sm">
                             <div class="font-bold">Pembayaran Aman</div>
@@ -139,7 +130,6 @@
                     <button type="button" @click="submit()" :disabled="!canSubmit"
                         class="mt-5 w-full rounded-xl bg-brand-600 px-4 py-4 text-base font-bold text-white shadow-lg shadow-brand-600/25 hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                         x-text="loading ? 'Memproses…' : 'Bayar Sekarang - ' + $rupiah($store.cart.subtotal)"></button>
-                    <p class="mt-2 text-center text-xs text-gray-400" x-show="!name.trim() && !loading">Isi nama pemesan dulu untuk melanjutkan.</p>
                 </section>
 
                 {{-- Metode pembayaran: dipilih di jendela Midtrans, jadi di sini hanya informasi --}}
@@ -147,9 +137,13 @@
                     <h2 class="text-sm font-bold">Metode Pembayaran</h2>
                     <p class="mt-1 text-xs text-gray-500">Pilih metode di jendela pembayaran setelah menekan tombol bayar.</p>
                     <ul class="mt-3 space-y-2 text-sm">
-                        @foreach ([['QRIS', 'Semua e-wallet: Dana, OVO, ShopeePay, dan lainnya'], ['GoPay', 'Buka aplikasi atau scan barcode'], ['Transfer Virtual Account', 'BCA, Mandiri, BRI, BNI']] as [$name, $desc])
+                        @foreach ([
+                            ['QRIS', 'Semua e-wallet: Dana, OVO, ShopeePay, dan lainnya', 'qr'],
+                            ['GoPay', 'Buka aplikasi atau scan barcode', 'wallet'],
+                            ['Transfer Virtual Account', 'BCA, Mandiri, BRI, BNI', 'bank'],
+                        ] as [$name, $desc, $icon])
                             <li class="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2.5">
-                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-brand-700"><x-icon name="wallet" class="h-5 w-5" /></span>
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><x-icon :name="$icon" class="h-5 w-5" /></span>
                                 <span>
                                     <span class="block font-semibold">{{ $name }}</span>
                                     <span class="block text-xs text-gray-500">{{ $desc }}</span>

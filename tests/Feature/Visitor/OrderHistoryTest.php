@@ -21,6 +21,8 @@ class OrderHistoryTest extends TestCase
     {
         parent::setUp();
         $this->f = $this->menuFixture();
+        // Riwayat butuh meja yang sudah dipilih, sama seperti menu.
+        $this->withSession(['table_id' => $this->f['table']->id]);
     }
 
     private function makeOrder(string $code, ?User $user = null, string $name = 'Budi', array $attributes = []): Order
@@ -46,7 +48,7 @@ class OrderHistoryTest extends TestCase
     {
         $this->get('/riwayat')->assertOk()
             ->assertSee('Riwayat Pesanan Anda')
-            ->assertSee('Lanjut dengan Google')
+            ->assertSee('Masuk atau Daftar')
             ->assertSee('Panduan Pesanan Tamu');
     }
 
@@ -164,13 +166,13 @@ class OrderHistoryTest extends TestCase
         $this->assertNull($page2->json('nextPage'));
     }
 
-    public function test_link_to_change_password_is_hidden_for_google_only_accounts(): void
+    public function test_profile_link_is_shown_for_every_customer_and_google_badge_only_for_google_accounts(): void
     {
         $withPassword = User::factory()->create();
         $googleOnly = User::factory()->create(['password' => null, 'google_id' => 'g-123']);
 
-        $this->actingAs($withPassword)->get('/riwayat')->assertSee('Ubah Kata Sandi');
-        $this->actingAs($googleOnly)->get('/riwayat')->assertDontSee('Ubah Kata Sandi')->assertSee('Akun Google');
+        $this->actingAs($withPassword)->get('/riwayat')->assertSee('Kelola Profil');
+        $this->actingAs($googleOnly)->get('/riwayat')->assertSee('Kelola Profil')->assertSee('Akun Google');
     }
 
     public function test_dashboard_sends_customers_to_the_history_page(): void
@@ -182,7 +184,7 @@ class OrderHistoryTest extends TestCase
     {
         $this->get('/login')->assertOk()
             ->assertSee('Masuk Sekarang')->assertSee('Lupa Password?')->assertSee('Lanjut dengan Google')
-            ->assertSee('Lanjut Memesan Sebagai Tamu')->assertSee('Daftar Sekarang');
+            ->assertDontSee('Lanjut Memesan Sebagai Tamu')->assertSee('Daftar Sekarang');
 
         $this->get('/register')->assertOk()
             ->assertSee('Buat Akun Pelanggan')->assertSee('Kekuatan Sandi')->assertSee('Daftar Akun Baru')->assertSee('Masuk di Sini');

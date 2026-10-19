@@ -13,12 +13,12 @@ class TableSelectionTest extends TestCase
     use BuildsMenu;
     use RefreshDatabase;
 
-    public function test_onboarding_page_shows_scan_and_manual_code(): void
+    public function test_onboarding_page_offers_scanning_only(): void
     {
         $this->get('/')
             ->assertOk()
             ->assertSee('Scan QR dengan Kamera')
-            ->assertSee('Kode Meja / Table ID');
+            ->assertDontSee('Kode Meja / Table ID');
     }
 
     public function test_scanning_a_valid_qr_stores_the_table_and_opens_the_menu(): void
@@ -56,38 +56,40 @@ class TableSelectionTest extends TestCase
         $this->get('/m/'.$f['table']->code)->assertSessionHasErrors('code');
     }
 
-    public function test_manual_code_entry_works_and_is_forgiving_about_spaces_and_case(): void
+    public function test_manual_code_entry_no_longer_exists(): void
     {
         $f = $this->menuFixture();
 
-        $this->post('/meja', ['code' => '  '.strtolower($f['table']->code).' '])
-            ->assertRedirect('/menu')
-            ->assertSessionHas('table_id', $f['table']->id);
-    }
-
-    public function test_wrong_manual_code_keeps_what_was_typed(): void
-    {
-        $this->from('/')->post('/meja', ['code' => 'SALAH-1'])
-            ->assertRedirect('/')
-            ->assertSessionHasErrors('code')
-            ->assertSessionHasInput('code', 'SALAH-1');
-
-        $this->post('/meja', [])->assertSessionHasErrors('code');
+        $this->post('/meja', ['code' => $f['table']->code])->assertNotFound();
+        $this->get('/')->assertOk()->assertDontSee('Kode Meja / Table ID')->assertSee('Scan QR dengan Kamera');
     }
 
     public function test_guessing_codes_is_rate_limited(): void
     {
         for ($i = 0; $i < 20; $i++) {
-            $this->post('/meja', ['code' => 'TEBAK-'.$i])->assertRedirect('/');
+            $this->get('/m/TEBAK-'.$i)->assertRedirect('/');
         }
 
-        $this->post('/meja', ['code' => 'TEBAK-X'])->assertStatus(429);
+        $this->get('/m/TEBAK-X')->assertStatus(429);
     }
 
     public function test_menu_and_cart_need_a_selected_table(): void
     {
         $this->get('/menu')->assertRedirect('/')->assertSessionHas('error');
         $this->get('/keranjang')->assertRedirect('/');
+    }
+
+    public function test_history_needs_a_selected_table_even_for_a_logged_in_customer(): void
+    {
+        $this->get('/riwayat')->assertRedirect('/');
+
+        $this->actingAs(User::factory()->create());
+        $this->get('/riwayat')->assertRedirect('/');
+        $this->getJson('/riwayat/data')->assertStatus(409);
+        $this->postJson('/riwayat/lookup', ['codes' => ['ORD-AAAAAA']])->assertStatus(409);
+
+        $f = $this->menuFixture();
+        $this->withSession(['table_id' => $f['table']->id])->get('/riwayat')->assertOk();
     }
 
     public function test_a_table_deactivated_by_admin_stops_working_immediately(): void
@@ -140,7 +142,7 @@ class TableSelectionTest extends TestCase
             $this->get('/'),
             $this->get('/login'),
             $this->get('/register'),
-            $this->get('/riwayat'),
+            $this->withSession($withTable)->get('/riwayat'),
             $this->get('/order/'.$order->code),
             $this->withSession($withTable)->get('/menu'),
             $this->withSession($withTable)->get('/keranjang'),

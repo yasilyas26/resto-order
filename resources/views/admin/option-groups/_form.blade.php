@@ -32,5 +32,5 @@
 
 <div class="mt-6 flex items-center gap-4">
     <x-primary-button>Simpan</x-primary-button>
-    <a href="{{ route('admin.option-groups.index') }}" class="text-sm text-gray-600 underline">Kembali</a>
+    <a href="{{ route('admin.option-groups.index') }}" class="text-sm font-semibold text-gray-600 hover:underline">Kembali</a>
 </div>

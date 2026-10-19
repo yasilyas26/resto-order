@@ -1,4 +1,4 @@
-// Pembuat deret level di form menu admin (mis. Level 0 sampai Level 8).
+// Pembuat deret level di halaman Tambah Grup Opsi (mis. Level 0 sampai Level 8).
 // Aturan batasnya sama dengan di server (LevelGroupBuilder::MAX_LEVELS); server tetap yang memutuskan.
 
 export const MAX_LEVELS = 21;

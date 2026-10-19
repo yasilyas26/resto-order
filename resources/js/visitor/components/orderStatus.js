@@ -4,7 +4,7 @@ import { rememberOrder } from '../lib/storage';
 const POLL_MS = 5000; // keputusan proyek: polling ±5 detik, bukan WebSocket
 
 /** Halaman status order: polling status, tombol bayar, cek ulang pembayaran, salin kode. */
-export default function orderStatus({ code, table, statusUrl, recheckUrl, payUrl, initial }) {
+export default function orderStatus({ code, table, statusUrl, recheckUrl, payUrl, changeUrl, initial }) {
     return {
         code,
         table,
@@ -72,15 +72,25 @@ export default function orderStatus({ code, table, statusUrl, recheckUrl, payUrl
             }
         },
 
-        async pay() {
+        /** Ganti metode bayar (mis. QRIS ke kartu): server membatalkan transaksi lama lalu membuka yang baru. */
+        changeMethod() {
+            return this.pay(changeUrl);
+        },
+
+        async pay(url = payUrl) {
             this.busy = true;
             this.message = '';
 
             try {
-                const { ok, data } = await postJson(payUrl);
+                const { ok, data } = await postJson(url);
 
                 if (!ok) {
                     this.message = data.message || 'Pembayaran belum bisa dibuka. Coba lagi.';
+
+                    // Ternyata sudah dibayar (mis. di jendela lain): ambil status terbaru supaya halaman ikut berubah.
+                    if (url === changeUrl && data.message?.includes('sudah kami terima')) {
+                        await this.recheck();
+                    }
 
                     return;
                 }

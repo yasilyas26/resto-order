@@ -16,7 +16,7 @@
         <div class="space-y-4">
             <section class="rounded-2xl bg-white p-5 shadow-sm sm:p-7">
                 <h1 class="text-2xl font-bold">Riwayat Pesanan Anda</h1>
-                <p class="mt-1 text-sm text-gray-500">Daftar transaksi pesanan dine-in &amp; bawa pulang terkini.</p>
+                <p class="mt-1 text-sm text-gray-500">Daftar transaksi pesanan makan di tempat &amp; bawa pulang terkini.</p>
             </section>
 
             <p x-show="loading" class="rounded-2xl bg-white p-8 text-center text-sm text-gray-500">Memuat riwayat…</p>
@@ -48,6 +48,7 @@
                             <div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="text-lg font-bold" x-text="order.code"></span>
+                                    <span class="rounded bg-brand-50 px-2 py-0.5 font-mono text-xs font-bold text-brand-700" x-show="order.queue" x-text="order.queue" title="Nomor antrean"></span>
                                     <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-gray-600" x-show="order.table" x-text="'Meja ' + order.table"></span>
                                 </div>
                                 <div class="text-xs text-gray-500" x-text="order.createdAt + ' · ' + order.orderType"></div>
@@ -132,12 +133,10 @@
                     @endif
 
                     <div class="mt-5 space-y-3 border-t border-gray-100 pt-5">
-                        @if ($user->password)
                             <a href="{{ route('profile.edit') }}"
                                 class="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold hover:bg-gray-50">
-                                <x-icon name="lock" class="h-4 w-4" /> Ubah Kata Sandi
+                                <x-icon name="user" class="h-4 w-4" /> Kelola Profil
                             </a>
-                        @endif
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-100">
@@ -151,13 +150,13 @@
                 <section class="rounded-2xl bg-white p-6 shadow-sm">
                     <h2 class="text-lg font-bold">Simpan Riwayat Pesanan</h2>
                     <p class="mt-2 text-sm text-gray-500">
-                        Riwayat tamu hanya tersimpan di perangkat ini. Masuk dengan Google atau buat akun supaya
+                        Riwayat tamu hanya tersimpan di perangkat ini. Masuk atau buat akun (bisa lewat Google) supaya
                         pesananmu tercatat di semua perangkat.
                     </p>
-                    <div class="mt-4 space-y-3">
-                        <x-visitor.google-button />
-                        <a href="{{ route('login') }}" class="block rounded-xl border border-gray-200 px-4 py-3 text-center text-sm font-semibold hover:bg-gray-50">Masuk dengan Email</a>
-                    </div>
+                    <a href="{{ route('login') }}"
+                        class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700">
+                        Masuk atau Daftar <x-icon name="arrow-right" class="h-4 w-4" />
+                    </a>
                     <p class="mt-3 text-xs text-gray-400">Pesanan yang dibuat sebelum login tidak dipindahkan ke akunmu.</p>
                 </section>
 

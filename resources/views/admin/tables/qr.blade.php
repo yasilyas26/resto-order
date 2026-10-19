@@ -15,14 +15,14 @@
 
             <div class="mx-auto mt-4 w-64 [&>svg]:h-auto [&>svg]:w-full">{!! $svg !!}</div>
 
-            <div class="mt-4 text-sm text-gray-600">Scan untuk memesan, atau ketik kode:</div>
-            <div class="mt-1 font-mono text-2xl font-semibold tracking-wider">{{ $table->code }}</div>
+            <div class="mt-4 text-base font-semibold text-gray-900">Scan untuk memesan</div>
+            <div class="mt-1 font-mono text-xs tracking-wider text-gray-400">{{ $table->code }}</div>
         </div>
 
         <div class="mt-6 flex flex-wrap items-center justify-center gap-3 print:hidden">
-            <button onclick="window.print()" class="rounded bg-gray-800 px-4 py-2 text-sm text-white">Cetak</button>
-            <a href="{{ route('admin.tables.qr.download', $table) }}" class="rounded border border-gray-300 bg-white px-4 py-2 text-sm">Unduh SVG</a>
-            <a href="{{ route('admin.tables.index') }}" class="text-sm text-gray-600 underline">Kembali</a>
+            <button onclick="window.print()" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-brand-700">Cetak</button>
+            <a href="{{ route('admin.tables.qr.download', $table) }}" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50">Unduh SVG</a>
+            <a href="{{ route('admin.tables.index') }}" class="text-sm font-semibold text-gray-600 hover:underline">Kembali</a>
         </div>
 
         <p class="mt-4 text-center text-xs text-gray-500 print:hidden">

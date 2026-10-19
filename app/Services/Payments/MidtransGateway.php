@@ -44,6 +44,16 @@ class MidtransGateway implements PaymentGateway
         }
     }
 
+    public function cancel(string $midtransOrderId): void
+    {
+        try {
+            Transaction::cancel($midtransOrderId);
+        } catch (Throwable $e) {
+            report($e);
+            throw new PaymentGatewayException('Gagal membatalkan transaksi di Midtrans: '.$e->getMessage(), 0, $e);
+        }
+    }
+
     public function fetchStatus(string $midtransOrderId): ?array
     {
         try {

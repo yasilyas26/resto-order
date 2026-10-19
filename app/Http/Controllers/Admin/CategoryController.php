@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\OptionGroup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
@@ -26,8 +27,11 @@ class CategoryController extends Controller
     {
         $data = $this->validated($request);
 
-        $category = Category::create($data);
-        $this->syncOptionGroups($category, $request->input('option_groups', []));
+        // Kategori dan grup bawaannya satu paket: gagal di tengah berarti tidak ada yang tersimpan.
+        DB::transaction(function () use ($data, $request) {
+            $category = Category::create($data);
+            $this->syncOptionGroups($category, $request->input('option_groups', []));
+        });
 
         return redirect()->route('admin.categories.index')
             ->with('status', 'Kategori ditambahkan.');
@@ -40,8 +44,12 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
-        $category->update($this->validated($request, $category));
-        $this->syncOptionGroups($category, $request->input('option_groups', []));
+        $data = $this->validated($request, $category);
+
+        DB::transaction(function () use ($category, $data, $request) {
+            $category->update($data);
+            $this->syncOptionGroups($category, $request->input('option_groups', []));
+        });
 
         return redirect()->route('admin.categories.index')
             ->with('status', 'Kategori diperbarui.');

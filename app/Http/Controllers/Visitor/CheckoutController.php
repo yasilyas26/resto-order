@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Table;
 use App\Services\Ordering\InvalidCartException;
 use App\Services\Ordering\PlaceOrder;
+use App\Services\Payments\ChangePaymentMethod;
 use App\Services\Payments\PaymentAttempts;
 use App\Services\Payments\PaymentGateway;
 use App\Services\Payments\PaymentGatewayException;
@@ -42,8 +43,6 @@ class CheckoutController extends Controller
         }
 
         $data = $request->validate([
-            'customer_name' => ['required', 'string', 'max:100'],
-            'customer_contact' => ['nullable', 'string', 'max:100'],
             'order_type' => ['required', Rule::enum(OrderType::class)],
             'items' => ['required', 'array', 'min:1', 'max:50'],
             'items.*.menu_id' => ['required', 'integer'],
@@ -52,7 +51,6 @@ class CheckoutController extends Controller
             'items.*.options' => ['nullable', 'array', 'max:30'],
             'items.*.options.*' => ['integer'],
         ], [
-            'customer_name.required' => 'Nama pemesan wajib diisi.',
             'items.required' => 'Keranjang masih kosong.',
             'items.min' => 'Keranjang masih kosong.',
         ]);
@@ -78,6 +76,35 @@ class CheckoutController extends Controller
         }
 
         return $this->paymentResponse($order, $attempts, 200);
+    }
+
+    /** Ganti metode bayar: transaksi lama dibatalkan, lalu percobaan baru dibuat (lihat ChangePaymentMethod). */
+    public function changeMethod(Order $order, PaymentGateway $gateway, ChangePaymentMethod $change): JsonResponse
+    {
+        if ($order->isPaid()) {
+            return response()->json(['message' => 'Pesanan ini sudah dibayar.'], 409);
+        }
+
+        if (! $gateway->isConfigured()) {
+            return $this->notConfigured();
+        }
+
+        try {
+            $payment = $change->execute($order);
+        } catch (PaymentGatewayException) {
+            return response()->json(['message' => 'Metode pembayaran belum bisa diganti. Tunggu sebentar lalu coba lagi.'], 502);
+        }
+
+        // Ternyata transaksi lama sudah dibayar: tidak ada percobaan baru, supaya tidak terbayar dua kali.
+        if ($payment === null) {
+            return response()->json(['message' => 'Pembayaranmu sudah kami terima. Pesanan ini tidak perlu dibayar lagi.'], 409);
+        }
+
+        return response()->json([
+            'order_code' => $order->code,
+            'order_url' => route('order.show', $order),
+            'snap_token' => $payment->snap_token,
+        ]);
     }
 
     private function paymentResponse(Order $order, PaymentAttempts $attempts, int $status): JsonResponse

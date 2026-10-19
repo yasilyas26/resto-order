@@ -5,6 +5,8 @@
      dua kelas ukuran bertabrakan dan yang menang ditentukan urutan CSS, bukan urutan penulisan. --}}
 <svg {{ $attributes->class([$attributes->has('class') ? null : 'h-5 w-5']) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     @switch($name)
+        @case('cart') <circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2.5l2.2 11h10.6L20.5 8H6.2"/> @break
+        @case('bank') <path d="M3 10l9-6 9 6"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/> @break
         @case('plus') <path d="M12 5v14M5 12h14"/> @break
         @case('minus') <path d="M5 12h14"/> @break
         @case('x') <path d="M6 6l12 12M18 6L6 18"/> @break

@@ -137,8 +137,13 @@ class PortalLoginTest extends TestCase
 
     public function test_the_portal_is_never_linked_from_customer_pages(): void
     {
-        foreach (['/', '/login', '/register', '/riwayat'] as $url) {
+        $table = \App\Models\Table::create(['number' => 'A07']);
+
+        foreach (['/', '/login', '/register'] as $url) {
             $this->get($url)->assertOk()->assertDontSee('/portal', false);
         }
+
+        // Riwayat butuh meja yang sudah dipilih.
+        $this->withSession(['table_id' => $table->id])->get('/riwayat')->assertOk()->assertDontSee('/portal', false);
     }
 }

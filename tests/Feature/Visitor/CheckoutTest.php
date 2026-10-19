@@ -28,6 +28,8 @@ class CheckoutTest extends TestCase
     {
         parent::setUp();
 
+        // Tes tidak boleh bergantung pada .env lokal (mis. masa bayar diperpendek untuk uji coba).
+        config(['midtrans.expiry_minutes' => 15]);
         $this->gateway = new FakeGateway();
         $this->app->instance(PaymentGateway::class, $this->gateway);
         $this->f = $this->menuFixture();
@@ -36,8 +38,6 @@ class CheckoutTest extends TestCase
     private function checkout(array $overrides = [], bool $withTable = true)
     {
         $payload = array_merge([
-            'customer_name' => 'Budi Santoso',
-            'customer_contact' => null,
             'order_type' => 'dine_in',
             'items' => [
                 ['menu_id' => $this->f['mie']->id, 'qty' => 2, 'note' => 'tanpa bawang', 'options' => [$this->f['lv3']->id, $this->f['telur']->id]],
@@ -63,7 +63,7 @@ class CheckoutTest extends TestCase
 
         $this->assertMatchesRegularExpression('/^ORD-[A-HJ-NP-Z2-9]{6}$/', $order->code);
         $this->assertSame($this->f['table']->id, $order->table_id);
-        $this->assertSame('Budi Santoso', $order->customer_name);
+        $this->assertSame('Meja A07', $order->customer_name, 'nama otomatis dari nomor meja');
         $this->assertSame(PaymentStatus::Pending, $order->payment_status);
         $this->assertSame(KitchenStatus::Queued, $order->kitchen_status);
         $this->assertSame(OrderType::DineIn, $order->order_type);
@@ -119,7 +119,7 @@ class CheckoutTest extends TestCase
         $this->assertNull($payment->transaction_status);
 
         $this->assertSame(
-            ['midtransOrderId' => $order->code.'-1', 'grossAmount' => 43000, 'customerName' => 'Budi Santoso', 'expiryMinutes' => 15],
+            ['midtransOrderId' => $order->code.'-1', 'grossAmount' => 43000, 'customerName' => 'Meja A07', 'expiryMinutes' => 15],
             $this->gateway->tokenRequests[0],
         );
         $this->assertTrue($order->expires_at->isFuture());
@@ -145,7 +145,6 @@ class CheckoutTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)->withSession(['table_id' => $this->f['table']->id])->postJson('/checkout', [
-            'customer_name' => $user->name,
             'order_type' => 'takeaway',
             'items' => [['menu_id' => $this->f['esTeh']->id, 'qty' => 1]],
         ])->assertCreated();
@@ -153,6 +152,14 @@ class CheckoutTest extends TestCase
         $order = Order::firstOrFail();
         $this->assertSame($user->id, $order->user_id);
         $this->assertSame(OrderType::Takeaway, $order->order_type);
+        $this->assertSame($user->name, $order->customer_name, 'pembeli yang login dikenali dari akunnya');
+    }
+
+    public function test_a_guest_takeaway_order_needs_no_name(): void
+    {
+        $this->checkout(['order_type' => 'takeaway'])->assertCreated();
+
+        $this->assertSame('Bawa Pulang', Order::firstOrFail()->customer_name);
     }
 
     // ---- penolakan ------------------------------------------------------------
@@ -169,14 +176,12 @@ class CheckoutTest extends TestCase
 
     public function test_input_is_validated(): void
     {
-        $this->checkout(['customer_name' => ''])->assertJsonValidationErrors('customer_name');
         $this->checkout(['order_type' => 'delivery'])->assertJsonValidationErrors('order_type');
         $this->checkout(['items' => []])->assertJsonValidationErrors('items');
         $this->checkout(['items' => [['menu_id' => $this->f['esTeh']->id, 'qty' => 0]]])->assertJsonValidationErrors('items.0.qty');
         $this->checkout(['items' => [['menu_id' => $this->f['esTeh']->id, 'qty' => 51]]])->assertJsonValidationErrors('items.0.qty');
         $this->checkout(['items' => [['menu_id' => $this->f['esTeh']->id, 'qty' => 1, 'note' => str_repeat('x', 201)]]])
             ->assertJsonValidationErrors('items.0.note');
-        $this->checkout(['customer_name' => str_repeat('a', 101)])->assertJsonValidationErrors('customer_name');
 
         $this->assertDatabaseCount('orders', 0);
     }
@@ -331,10 +336,10 @@ class CheckoutTest extends TestCase
     public function test_one_ip_hammering_checkout_is_eventually_blocked(): void
     {
         for ($i = 0; $i < 40; $i++) {
-            $this->checkout(['customer_name' => ''])->assertStatus(422);
+            $this->checkout(['items' => []])->assertStatus(422);
         }
 
-        $this->checkout(['customer_name' => ''])->assertStatus(429);
+        $this->checkout(['items' => []])->assertStatus(429);
         $this->assertDatabaseCount('orders', 0);
     }
 }

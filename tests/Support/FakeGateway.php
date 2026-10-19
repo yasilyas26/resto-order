@@ -14,6 +14,11 @@ class FakeGateway implements PaymentGateway
 
     public bool $failStatus = false;
 
+    public bool $failCancel = false;
+
+    /** @var list<string> */
+    public array $cancelled = [];
+
     /** @var list<array<string, mixed>> */
     public array $tokenRequests = [];
 
@@ -34,6 +39,15 @@ class FakeGateway implements PaymentGateway
         $this->tokenRequests[] = compact('midtransOrderId', 'grossAmount', 'customerName', 'expiryMinutes');
 
         return 'snap-token-'.count($this->tokenRequests).'-'.$midtransOrderId;
+    }
+
+    public function cancel(string $midtransOrderId): void
+    {
+        if ($this->failCancel) {
+            throw new PaymentGatewayException('Midtrans menolak pembatalan.');
+        }
+
+        $this->cancelled[] = $midtransOrderId;
     }
 
     public function fetchStatus(string $midtransOrderId): ?array

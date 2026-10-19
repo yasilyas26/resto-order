@@ -10,7 +10,7 @@ enum OrderType: string
     public function label(): string
     {
         return match ($this) {
-            self::DineIn => 'Dine In',
+            self::DineIn => 'Makan di Tempat',
             self::Takeaway => 'Bawa Pulang',
         };
     }
