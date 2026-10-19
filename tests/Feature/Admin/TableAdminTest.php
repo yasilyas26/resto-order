@@ -231,4 +231,27 @@ class TableAdminTest extends TestCase
         $this->assertSame(['20', '19', '18', '17', '16', '15', '14', '13'], $page1);
         $this->assertSame(['12', '11', '10', '9', '8', '7', '6', '5'], $page2);
     }
+
+    // ---- Unduh QR banyak meja -------------------------------------------------------
+
+    public function test_one_selected_table_downloads_as_svg_and_many_as_zip(): void
+    {
+        $a = Table::create(['number' => '1']);
+        $b = Table::create(['number' => '2']);
+
+        $one = $this->post('/admin/tables/qr/download', ['ids' => [$a->id]])->assertOk();
+        $this->assertStringContainsString('image/svg+xml', $one->headers->get('Content-Type'));
+
+        $many = $this->post('/admin/tables/qr/download', ['ids' => [$a->id, $b->id]])->assertOk();
+        $this->assertStringContainsString('application/zip', $many->headers->get('Content-Type'));
+        $this->assertStringContainsString('.zip', $many->headers->get('Content-Disposition'));
+    }
+
+    public function test_download_needs_at_least_one_table_and_the_list_shows_checkboxes(): void
+    {
+        $this->post('/admin/tables/qr/download', ['ids' => []])->assertSessionHasErrors('ids');
+
+        Table::create(['number' => '1']);
+        $this->get('/admin/tables')->assertOk()->assertSee('Pilih semua meja')->assertSee('Unduh QR');
+    }
 }

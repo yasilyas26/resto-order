@@ -50,14 +50,26 @@
             class="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-700"><x-icon name="plus" class="h-4 w-4" /> Tambah Meja Baru</a>
     </div>
 
-    <div class="mt-4 overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="flex items-center gap-2 border-b border-gray-100 px-4 py-3">
+    <div class="mt-4 overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm"
+        x-data="{ picked: [], all: @js($tables->pluck('id')), get every() { return this.all.length > 0 && this.picked.length === this.all.length },
+            toggleAll(on) { this.picked = on ? [...this.all] : [] } }">
+        <div class="flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-3">
             <h2 class="font-bold">Daftar Meja Resto</h2>
             <span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs text-gray-600">{{ $tables->count() }} dari {{ $tables->total() }} meja ditampilkan</span>
+
+            {{-- Muncul setelah ada meja yang dicentang --}}
+            <form method="POST" action="{{ route('admin.tables.qr.download-many') }}" x-show="picked.length" x-cloak class="ml-auto flex items-center gap-3">
+                @csrf
+                <template x-for="id in picked" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                <span class="text-sm text-gray-600"><b x-text="picked.length"></b> meja dipilih</span>
+                <button type="button" @click="picked = []" class="text-sm font-semibold text-gray-600 hover:underline">Batal</button>
+                <button class="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-brand-700">Unduh QR</button>
+            </form>
         </div>
         <table class="w-full text-left text-sm">
             <thead class="bg-blue-50/60">
                 <tr>
+                    <th class="w-10 px-4 py-3"><input type="checkbox" aria-label="Pilih semua meja di halaman ini" :checked="every" @change="toggleAll($event.target.checked)" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500"></th>
                     <th class="{{ $th }}">Nomor / Nama Meja</th>
                     <th class="{{ $th }}">Kode Unik</th>
                     <th class="{{ $th }}">Status</th>
@@ -69,6 +81,7 @@
             <tbody>
                 @forelse ($tables as $table)
                     <tr class="border-t border-gray-100 hover:bg-gray-50">
+                        <td class="px-4 py-4"><input type="checkbox" value="{{ $table->id }}" x-model.number="picked" aria-label="Pilih Meja {{ $table->number }}" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500"></td>
                         <td class="px-4 py-4 font-bold">Meja {{ $table->number }}</td>
                         <td class="px-4 py-4"><span class="rounded-lg bg-blue-50 px-2.5 py-1 font-mono text-xs font-bold text-brand-700">{{ $table->code }}</span></td>
                         <td class="px-4 py-4">
@@ -104,7 +117,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Tidak ada meja yang cocok.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Tidak ada meja yang cocok.</td></tr>
                 @endforelse
             </tbody>
         </table>

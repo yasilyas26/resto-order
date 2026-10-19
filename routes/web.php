@@ -99,6 +99,7 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
+        Route::post('tables/qr/download', [TableController::class, 'qrDownloadMany'])->name('tables.qr.download-many');
         Route::resource('tables', TableController::class)->except('show');
         Route::post('tables/{table}/regenerate', [TableController::class, 'regenerate'])->name('tables.regenerate');
         Route::get('tables/{table}/qr', [TableController::class, 'qr'])->name('tables.qr');

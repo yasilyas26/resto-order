@@ -184,6 +184,35 @@ class TableController extends Controller
         ]);
     }
 
+    /** Unduh QR beberapa meja sekaligus: satu meja jadi file SVG, lebih dari satu dibungkus ZIP. */
+    public function qrDownloadMany(Request $request)
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*' => ['integer'],
+        ], [
+            'ids.required' => 'Pilih dulu meja yang QR-nya mau diunduh.',
+            'ids.min' => 'Pilih dulu meja yang QR-nya mau diunduh.',
+        ])['ids'];
+
+        $tables = Table::whereIn('id', $ids)->orderBy('id')->get();
+        abort_if($tables->isEmpty(), 404);
+
+        if ($tables->count() === 1) {
+            return $this->qrDownload($tables->first());
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'qr');
+        $zip = new \ZipArchive();
+        $zip->open($path, \ZipArchive::OVERWRITE);
+        foreach ($tables as $table) {
+            $zip->addFromString('qr-meja-'.$table->code.'.svg', QrSvg::make($table->scanUrl(), 600));
+        }
+        $zip->close();
+
+        return response()->download($path, 'qr-meja-'.now()->format('Ymd-His').'.zip', ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
+    }
+
     private function validated(Request $request, ?Table $table = null): array
     {
         $data = $request->validate([
