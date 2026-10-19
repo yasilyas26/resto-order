@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Enums\KitchenStatus;
+use App\Enums\OrderType;
+use App\Enums\PaymentStatus;
+use App\Models\Order;
 use App\Models\Table;
 use App\Support\QrSvg;
 use Illuminate\Http\Request;
@@ -10,11 +14,55 @@ use Illuminate\Validation\Rule;
 
 class TableController extends Controller
 {
-    public function index()
-    {
-        $tables = Table::orderBy('number')->get();
+    private const PER_PAGE = 8;
 
-        return view('admin.tables.index', compact('tables'));
+    /** Meja dianggap terisi selama order lunasnya belum selesai, plus sebentar setelah selesai (pelanggan masih makan). */
+    private const OCCUPIED_AFTER_DONE_MINUTES = 45;
+
+    public function index(Request $request)
+    {
+        $search = trim((string) $request->query('q', ''));
+
+        $tables = Table::query()
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('number', 'like', '%'.addcslashes($search, '%_\\').'%')
+                ->orWhere('code', 'like', '%'.addcslashes($search, '%_\\').'%')))
+            ->orderBy('number')
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+
+        $total = Table::count();
+        $active = Table::where('is_active', true)->count();
+        $occupiedIds = $this->occupiedTableIds();
+        $occupied = Table::where('is_active', true)->whereIn('id', $occupiedIds)->count();
+
+        return view('admin.tables.index', [
+            'tables' => $tables,
+            'search' => $search,
+            'occupiedIds' => $occupiedIds,
+            'stats' => [
+                'total' => $total,
+                'active' => $active,
+                'inactive' => $total - $active,
+                'occupied' => $occupied,
+                'percent' => $active > 0 ? (int) round($occupied / $active * 100) : 0,
+            ],
+        ]);
+    }
+
+    /** @return list<int> */
+    private function occupiedTableIds(): array
+    {
+        return Order::query()
+            ->where('payment_status', PaymentStatus::Paid)
+            ->where('order_type', OrderType::DineIn)
+            ->whereNotNull('table_id')
+            ->where(fn ($q) => $q
+                ->where('kitchen_status', '!=', KitchenStatus::Done)
+                ->orWhere('completed_at', '>=', now()->subMinutes(self::OCCUPIED_AFTER_DONE_MINUTES)))
+            ->distinct()
+            ->pluck('table_id')
+            ->all();
     }
 
     public function create()

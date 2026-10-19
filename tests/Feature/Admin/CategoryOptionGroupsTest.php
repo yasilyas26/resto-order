@@ -105,7 +105,7 @@ class CategoryOptionGroupsTest extends TestCase
         $this->actingAs(User::factory()->admin()->create());
 
         $this->put("/admin/categories/{$this->minuman->id}", ['name' => 'Minuman', 'option_groups' => [$this->level->id]])
-            ->assertRedirect('/admin/categories');
+            ->assertRedirect('/admin/menus?tab=kategori');
         $this->assertSame([$this->level->id], $this->minuman->optionGroups()->pluck('option_groups.id')->all());
 
         $this->put("/admin/categories/{$this->minuman->id}", ['name' => 'Minuman'])->assertRedirect();
@@ -116,7 +116,7 @@ class CategoryOptionGroupsTest extends TestCase
     {
         $this->actingAs(User::factory()->admin()->create());
 
-        $this->get('/admin/categories')->assertOk()->assertSee('Level pedas');
+        $this->get('/admin/menus?tab=kategori')->assertOk()->assertSee('Level pedas');
         $this->get("/admin/categories/{$this->mie->id}/edit")->assertOk()->assertSee('Grup opsi bawaan kategori');
         $this->get("/admin/menus/{$this->miePedas->id}/edit")->assertOk()->assertSee('Jangan pakai grup bawaan kategori');
 

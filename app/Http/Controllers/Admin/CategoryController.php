@@ -11,11 +11,10 @@ use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
+    /** Daftar kategori tinggal sebagai tab di Manajemen Menu. */
     public function index()
     {
-        $categories = Category::with('optionGroups')->orderBy('sort')->orderBy('name')->get();
-
-        return view('admin.categories.index', compact('categories'));
+        return redirect()->route('admin.menus.index', ['tab' => 'kategori']);
     }
 
     public function create()
@@ -33,7 +32,7 @@ class CategoryController extends Controller
             $this->syncOptionGroups($category, $request->input('option_groups', []));
         });
 
-        return redirect()->route('admin.categories.index')
+        return redirect()->route('admin.menus.index', ['tab' => 'kategori'])
             ->with('status', 'Kategori ditambahkan.');
     }
 
@@ -51,20 +50,20 @@ class CategoryController extends Controller
             $this->syncOptionGroups($category, $request->input('option_groups', []));
         });
 
-        return redirect()->route('admin.categories.index')
+        return redirect()->route('admin.menus.index', ['tab' => 'kategori'])
             ->with('status', 'Kategori diperbarui.');
     }
 
     public function destroy(Category $category)
     {
         if ($category->menus()->exists()) {
-            return redirect()->route('admin.categories.index')
+            return redirect()->route('admin.menus.index', ['tab' => 'kategori'])
                 ->with('error', "Kategori \"{$category->name}\" masih punya menu aktif. Pindahkan atau hapus menunya dulu.");
         }
 
         $category->delete();
 
-        return redirect()->route('admin.categories.index')
+        return redirect()->route('admin.menus.index', ['tab' => 'kategori'])
             ->with('status', 'Kategori dipindah ke Sampah.');
     }
 

@@ -1,14 +1,14 @@
-@props(['title'])
+@props(['title', 'subtitle' => null])
 
 @php
     $links = [
-        ['Dashboard', 'admin.index', ['admin.index'], 'bowl'],
-        ['Kategori', 'admin.categories.index', ['admin.categories.*'], 'utensils'],
-        ['Menu', 'admin.menus.index', ['admin.menus.*'], 'receipt'],
-        ['Grup Opsi', 'admin.option-groups.index', ['admin.option-groups.*', 'admin.options.*'], 'flame'],
-        ['Meja', 'admin.tables.index', ['admin.tables.*'], 'qr'],
-        ['Sampah', 'admin.trash.index', ['admin.trash.*'], 'trash'],
+        ['Ringkasan & Papan Order', 'admin.index', ['admin.index']],
+        ['Manajemen Menu', 'admin.menus.index', ['admin.menus.*', 'admin.categories.*', 'admin.option-groups.*', 'admin.options.*']],
+        ['Manajemen Meja', 'admin.tables.index', ['admin.tables.*']],
+        ['Riwayat Transaksi', 'admin.transactions.index', ['admin.transactions.*']],
+        ['Tempat Sampah', 'admin.trash.index', ['admin.trash.*']],
     ];
+    $initials = collect(explode(' ', trim(auth()->user()->name)))->filter()->take(2)->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->join('');
 @endphp
 
 <!DOCTYPE html>
@@ -26,45 +26,45 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gray-50 font-inter text-gray-900 antialiased">
+<body class="min-h-screen bg-slate-50 font-inter text-gray-900 antialiased">
     <header class="sticky top-0 z-40 border-b border-gray-200 bg-white">
-        <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-            <span class="shrink-0 whitespace-nowrap text-xl font-extrabold tracking-tight text-brand-700 sm:text-2xl">{{ config('app.name') }}</span>
-
-            {{-- Tab di tengah (layar lebar) --}}
-            <nav class="hidden items-center gap-4 lg:flex">
-                @foreach ($links as [$label, $route, $patterns, $icon])
-                    <a href="{{ route($route) }}"
-                        class="flex items-center gap-2 border-b-2 px-2 py-5 text-sm font-semibold {{ request()->routeIs(...$patterns) ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500 hover:text-gray-900' }}">
-                        <x-icon :name="$icon" class="h-4 w-4" />
-                        <span class="whitespace-nowrap">{{ $label }}</span>
-                    </a>
-                @endforeach
-            </nav>
+        <div class="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
+            <span class="shrink-0 whitespace-nowrap text-2xl font-extrabold tracking-tight text-brand-700">{{ config('app.name') }}</span>
 
             <form method="POST" action="{{ route('portal.logout') }}" class="flex shrink-0 items-center gap-3">
                 @csrf
-                <span class="hidden text-sm text-gray-500 sm:inline">{{ auth()->user()->name }}</span>
+                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-slate-800">{{ $initials }}</span>
+                <span class="hidden leading-tight sm:block">
+                    <span class="block text-sm font-bold">{{ auth()->user()->name }}</span>
+                    <span class="block text-[11px] text-gray-500">Admin</span>
+                </span>
                 <button class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-bold text-brand-700 hover:bg-brand-50">
-                    <x-icon name="logout" class="h-4 w-4" /> Keluar
+                    <x-icon name="logout" class="h-4 w-4" /> <span class="hidden sm:inline">Keluar</span>
                 </button>
             </form>
         </div>
 
-        {{-- Tab di baris kedua (HP/tablet), bisa digeser kalau tidak muat --}}
-        <nav class="flex gap-4 overflow-x-auto border-t border-gray-100 px-4 sm:px-6 lg:hidden">
-            @foreach ($links as [$label, $route, $patterns, $icon])
+        {{-- Tab; bisa digeser kalau layar sempit --}}
+        <nav class="mx-auto flex max-w-[1400px] gap-6 overflow-x-auto px-4 sm:px-6">
+            @foreach ($links as [$label, $route, $patterns])
                 <a href="{{ route($route) }}"
-                    class="flex shrink-0 items-center gap-2 border-b-2 px-2 py-3 text-sm font-semibold {{ request()->routeIs(...$patterns) ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500' }}">
-                    <x-icon :name="$icon" class="h-4 w-4" />
-                    <span class="whitespace-nowrap">{{ $label }}</span>
-                </a>
+                    class="shrink-0 whitespace-nowrap border-b-2 py-3 text-sm font-semibold {{ request()->routeIs(...$patterns) ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-600 hover:text-gray-900' }}">{{ $label }}</a>
             @endforeach
         </nav>
     </header>
 
-    <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <h1 class="mb-6 text-2xl font-extrabold tracking-tight text-gray-900">{{ $title }}</h1>
+    <main class="mx-auto max-w-[1400px] px-4 py-8 sm:px-6">
+        <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">{{ $title }}</h1>
+                @if ($subtitle)
+                    <p class="mt-1 text-sm text-gray-600">{{ $subtitle }}</p>
+                @endif
+            </div>
+            @isset($actions)
+                <div class="flex flex-wrap items-center gap-2">{{ $actions }}</div>
+            @endisset
+        </div>
 
         @if (session('status'))
             <div class="mb-4 flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">

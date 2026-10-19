@@ -10,11 +10,10 @@ use Illuminate\Http\Request;
 
 class OptionGroupController extends Controller
 {
+    /** Daftar grup opsi tinggal sebagai tab di Manajemen Menu. */
     public function index()
     {
-        $groups = OptionGroup::withCount('options')->orderBy('name')->get();
-
-        return view('admin.option-groups.index', compact('groups'));
+        return redirect()->route('admin.menus.index', ['tab' => 'opsi']);
     }
 
     public function create()
@@ -90,7 +89,7 @@ class OptionGroupController extends Controller
     {
         $optionGroup->delete();
 
-        return redirect()->route('admin.option-groups.index')
+        return redirect()->route('admin.menus.index', ['tab' => 'opsi'])
             ->with('status', 'Grup opsi dipindah ke Sampah.');
     }
 

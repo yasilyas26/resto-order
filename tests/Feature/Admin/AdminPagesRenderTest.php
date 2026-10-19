@@ -37,7 +37,7 @@ class AdminPagesRenderTest extends TestCase
         $menu->optionGroups()->attach($group->id, ['sort' => 0]);
         $table = Table::create(['number' => 'A07']);
 
-        $this->get('/admin/categories')->assertOk()->assertSee('Makanan');
+        $this->get('/admin/menus?tab=kategori')->assertOk()->assertSee('Makanan');
         $this->get("/admin/categories/{$category->id}/edit")->assertOk()->assertSee('Makanan');
 
         $this->get('/admin/menus')->assertOk()
@@ -46,7 +46,7 @@ class AdminPagesRenderTest extends TestCase
         $this->get("/admin/menus/{$menu->id}/edit")->assertOk()
             ->assertSee('Mie Pedas')->assertSee('Hapus foto ini')->assertSee('Lv 0, Lv 4');
 
-        $this->get('/admin/option-groups')->assertOk()->assertSee('Level pedas')->assertSee('Wajib');
+        $this->get('/admin/menus?tab=opsi')->assertOk()->assertSee('Level pedas')->assertSee('Wajib');
         $this->get("/admin/option-groups/{$group->id}/edit")->assertOk()->assertSee('Lv 4')->assertSee('+ Tambah');
 
         $this->get('/admin/tables')->assertOk()->assertSee('A07')->assertSee($table->code);

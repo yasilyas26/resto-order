@@ -7,6 +7,7 @@
     @switch($name)
         @case('cart') <circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M3 4h2.5l2.2 11h10.6L20.5 8H6.2"/> @break
         @case('bank') <path d="M3 10l9-6 9 6"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/> @break
+        @case('search') <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/> @break
         @case('plus') <path d="M12 5v14M5 12h14"/> @break
         @case('minus') <path d="M5 12h14"/> @break
         @case('x') <path d="M6 6l12 12M18 6L6 18"/> @break

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\KitchenStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -12,6 +13,34 @@ use Illuminate\Support\Collection;
  */
 class BoardPresenter
 {
+    /** Order yang sudah selesai masih tampil di papan sebentar, lalu pindah ke Riwayat. */
+    public const DONE_VISIBLE_HOURS = 3;
+
+    /**
+     * Isi papan: order lunas yang belum dibuat, sedang dibuat, atau baru selesai.
+     * Dipakai papan karyawan dan Ringkasan admin supaya keduanya selalu sama.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function board(): array
+    {
+        $orders = Order::with(['items.options', 'table'])
+            ->where('payment_status', PaymentStatus::Paid)
+            ->where(function ($query) {
+                $query->whereIn('kitchen_status', [KitchenStatus::Queued, KitchenStatus::Cooking])
+                    ->orWhere(fn ($done) => $done
+                        ->where('kitchen_status', KitchenStatus::Done)
+                        ->where('completed_at', '>=', now()->subHours(self::DONE_VISIBLE_HOURS)));
+            })
+            ->orderBy('paid_at')
+            ->orderBy('id')
+            ->get();
+
+        $ranks = static::ranksFor($orders);
+
+        return $orders->map(fn (Order $order) => static::card($order, $ranks[$order->id] ?? null))->all();
+    }
+
     /** Kartu papan. $rank = urutan order dari meja yang sama hari ini ("Order ke-2"). */
     public static function card(Order $order, ?int $rank = null): array
     {
@@ -26,6 +55,7 @@ class BoardPresenter
             'table' => $order->getRelationValue('table')?->number,
             'customer' => $order->customer_name,
             'orderType' => $order->order_type->label(),
+            'type' => $order->order_type->value,
             'sequence' => $rank,
             'kitchen' => $order->kitchen_status->value,
             'refund' => $order->refund_status->value,

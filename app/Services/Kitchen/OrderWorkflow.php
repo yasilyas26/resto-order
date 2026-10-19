@@ -30,6 +30,7 @@ class OrderWorkflow
 
             if ($order->kitchen_status === KitchenStatus::Queued) {
                 $order->kitchen_status = KitchenStatus::Cooking;
+                $order->cooking_started_at = now();
                 $order->save();
             }
         });
@@ -66,6 +67,7 @@ class OrderWorkflow
             // Begitu ada item yang diproses, order otomatis berstatus "Sedang dibuat".
             if ($served && $order->kitchen_status === KitchenStatus::Queued) {
                 $order->kitchen_status = KitchenStatus::Cooking;
+                $order->cooking_started_at = now();
                 $order->save();
             }
         });

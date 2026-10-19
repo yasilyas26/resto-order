@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\OptionController;
 use App\Http\Controllers\Admin\OptionGroupController;
 use App\Http\Controllers\Admin\TableController;
+use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\TrashController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\PortalController;
@@ -73,9 +75,11 @@ Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::view('/', 'admin.index')->name('index');
+        Route::get('/', [DashboardController::class, 'index'])->name('index');
+        Route::get('dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
 
         Route::resource('categories', CategoryController::class)->except('show');
+        Route::post('menus/{menu}/availability', [MenuController::class, 'toggleAvailability'])->name('menus.availability');
         Route::resource('menus', MenuController::class)->except('show');
 
         Route::post('option-groups/level', [OptionGroupController::class, 'storeLevels'])->name('option-groups.levels');
@@ -84,12 +88,15 @@ Route::middleware(['auth', 'role:admin'])
         Route::put('options/{option}', [OptionController::class, 'update'])->name('options.update');
         Route::delete('options/{option}', [OptionController::class, 'destroy'])->name('options.destroy');
 
+        Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
+
         Route::resource('tables', TableController::class)->except('show');
         Route::post('tables/{table}/regenerate', [TableController::class, 'regenerate'])->name('tables.regenerate');
         Route::get('tables/{table}/qr', [TableController::class, 'qr'])->name('tables.qr');
         Route::get('tables/{table}/qr/download', [TableController::class, 'qrDownload'])->name('tables.qr.download');
 
         Route::get('trash', [TrashController::class, 'index'])->name('trash.index');
+        Route::post('trash/empty', [TrashController::class, 'empty'])->name('trash.empty');
         Route::post('trash/{type}/{id}/restore', [TrashController::class, 'restore'])->name('trash.restore');
         Route::delete('trash/{type}/{id}', [TrashController::class, 'forceDelete'])->name('trash.force');
     });

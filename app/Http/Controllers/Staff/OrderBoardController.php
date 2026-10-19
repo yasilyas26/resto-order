@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Staff;
 
-use App\Enums\KitchenStatus;
-use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -20,9 +18,6 @@ use Illuminate\View\View;
  */
 class OrderBoardController extends Controller
 {
-    /** Order yang sudah selesai masih tampil di papan sebentar, lalu pindah ke tab Riwayat. */
-    private const DONE_VISIBLE_HOURS = 3;
-
     public function index(): View
     {
         return view('staff.orders', ['initial' => $this->payload()]);
@@ -73,22 +68,8 @@ class OrderBoardController extends Controller
     /** @return array{orders: list<array<string, mixed>>, serverTime: string} */
     private function payload(): array
     {
-        $orders = Order::with(['items.options', 'table'])
-            ->where('payment_status', PaymentStatus::Paid)
-            ->where(function ($query) {
-                $query->whereIn('kitchen_status', [KitchenStatus::Queued, KitchenStatus::Cooking])
-                    ->orWhere(fn ($done) => $done
-                        ->where('kitchen_status', KitchenStatus::Done)
-                        ->where('completed_at', '>=', now()->subHours(self::DONE_VISIBLE_HOURS)));
-            })
-            ->orderBy('paid_at')
-            ->orderBy('id')
-            ->get();
-
-        $ranks = BoardPresenter::ranksFor($orders);
-
         return [
-            'orders' => $orders->map(fn (Order $order) => BoardPresenter::card($order, $ranks[$order->id] ?? null))->all(),
+            'orders' => BoardPresenter::board(),
             'serverTime' => now()->toIso8601String(),
         ];
     }

@@ -21,11 +21,11 @@ class AdminAccessTest extends TestCase
     {
         return [
             'dashboard' => ['/admin'],
-            'kategori' => ['/admin/categories'],
+            'kategori' => ['/admin/menus?tab=kategori'],
             'tambah kategori' => ['/admin/categories/create'],
             'menu' => ['/admin/menus'],
             'tambah menu' => ['/admin/menus/create'],
-            'grup opsi' => ['/admin/option-groups'],
+            'grup opsi' => ['/admin/menus?tab=opsi'],
             'tambah grup opsi' => ['/admin/option-groups/create'],
             'meja' => ['/admin/tables'],
             'tambah meja' => ['/admin/tables/create'],

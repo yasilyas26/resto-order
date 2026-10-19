@@ -23,13 +23,13 @@ class CategoryAdminTest extends TestCase
         Category::create(['name' => 'Minuman', 'sort' => 2]);
         Category::create(['name' => 'Makanan', 'sort' => 1]);
 
-        $this->get('/admin/categories')->assertOk()->assertSeeInOrder(['Makanan', 'Minuman']);
+        $this->get('/admin/menus?tab=kategori')->assertOk()->assertSeeInOrder(['Makanan', 'Minuman']);
     }
 
     public function test_admin_can_create_a_category_and_empty_sort_becomes_zero(): void
     {
         $this->post('/admin/categories', ['name' => 'Makanan', 'sort' => ''])
-            ->assertRedirect('/admin/categories');
+            ->assertRedirect('/admin/menus?tab=kategori');
 
         $this->assertDatabaseHas('categories', ['name' => 'Makanan', 'sort' => 0]);
     }
@@ -66,7 +66,7 @@ class CategoryAdminTest extends TestCase
     {
         $category = Category::create(['name' => 'Minuman']);
 
-        $this->delete("/admin/categories/{$category->id}")->assertRedirect('/admin/categories');
+        $this->delete("/admin/categories/{$category->id}")->assertRedirect('/admin/menus?tab=kategori');
 
         $this->assertSoftDeleted($category);
     }

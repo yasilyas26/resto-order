@@ -14,14 +14,44 @@ use Throwable;
 
 class MenuController extends Controller
 {
-    public function index()
-    {
-        $menus = Menu::with(['category.optionGroups', 'optionGroups'])
-            ->orderBy('category_id')
-            ->orderBy('name')
-            ->get();
+    private const PER_PAGE = 8;
 
-        return view('admin.menus.index', compact('menus'));
+    /** Satu halaman, tiga tab: Menu, Kategori, Grup Opsi (?tab=menu|kategori|opsi). */
+    public function index(Request $request)
+    {
+        $tab = in_array($request->query('tab'), ['kategori', 'opsi'], true) ? $request->query('tab') : 'menu';
+        $data = ['tab' => $tab];
+
+        if ($tab === 'kategori') {
+            $data['categories'] = Category::with('optionGroups')->withCount('menus')->orderBy('sort')->orderBy('name')->get();
+        } elseif ($tab === 'opsi') {
+            $data['groups'] = OptionGroup::withCount('options')->orderBy('name')->get();
+        } else {
+            $search = trim((string) $request->query('q', ''));
+            $categoryId = $request->integer('category') ?: null;
+            $status = in_array($request->query('status'), ['available', 'sold_out'], true) ? $request->query('status') : null;
+
+            $data['menus'] = Menu::with(['category.optionGroups', 'optionGroups'])
+                ->when($search !== '', fn ($q) => $q->where('name', 'like', '%'.addcslashes($search, '%_\\').'%'))
+                ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
+                ->when($status, fn ($q) => $q->where('is_available', $status === 'available'))
+                ->orderBy('category_id')
+                ->orderBy('name')
+                ->paginate(self::PER_PAGE)
+                ->withQueryString();
+            $data['categoryOptions'] = Category::orderBy('sort')->orderBy('name')->get(['id', 'name']);
+            $data += ['search' => $search, 'categoryId' => $categoryId, 'status' => $status];
+        }
+
+        return view('admin.menus.index', $data);
+    }
+
+    /** Sakelar Tersedia/Habis langsung dari tabel. */
+    public function toggleAvailability(Menu $menu)
+    {
+        $menu->update(['is_available' => ! $menu->is_available]);
+
+        return back()->with('status', "\"{$menu->name}\" sekarang ".($menu->is_available ? 'tersedia.' : 'habis.'));
     }
 
     public function create()

@@ -43,6 +43,7 @@ class Order extends Model
             'total' => 'integer',
             'refund_amount' => 'integer',
             'paid_at' => 'datetime',
+            'cooking_started_at' => 'datetime',
             'queue_date' => 'date',
             'queue_number' => 'integer',
             'completed_at' => 'datetime',
