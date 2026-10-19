@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>QR Meja {{ $table->number }}</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-100 font-sans antialiased print:bg-white">
@@ -16,7 +18,7 @@
             <div class="mx-auto mt-4 w-64 [&>svg]:h-auto [&>svg]:w-full">{!! $svg !!}</div>
 
             <div class="mt-4 text-base font-semibold text-gray-900">Scan untuk memesan</div>
-            <div class="mt-1 font-mono text-xs tracking-wider text-gray-400">{{ $table->code }}</div>
+            <div class="mt-1 tabular-nums text-xs tracking-wider text-gray-400">{{ $table->code }}</div>
         </div>
 
         <div class="mt-6 flex flex-wrap items-center justify-center gap-3 print:hidden">
@@ -26,7 +28,7 @@
         </div>
 
         <p class="mt-4 text-center text-xs text-gray-500 print:hidden">
-            QR berisi: <span class="break-all font-mono">{{ $table->scanUrl() }}</span>
+            QR berisi: <span class="break-all tabular-nums">{{ $table->scanUrl() }}</span>
         </p>
     </div>
 </body>

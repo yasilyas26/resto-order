@@ -77,7 +77,7 @@
             <div x-show="status.queue" x-cloak class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-brand-600 bg-white p-4 sm:p-5">
                 <div>
                     <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Nomor antreanmu</div>
-                    <div class="font-mono text-5xl font-extrabold tracking-wide text-brand-700" x-text="status.queue"></div>
+                    <div class="tabular-nums text-5xl font-extrabold tracking-wide text-brand-700" x-text="status.queue"></div>
                 </div>
                 <p class="max-w-xs text-sm text-gray-600">
                     @if ($order->order_type === \App\Enums\OrderType::Takeaway)
@@ -105,7 +105,7 @@
                         <p x-show="countdownLabel" x-cloak class="mt-1 flex items-center gap-1.5 text-sm font-bold"
                             :class="remaining <= 60 ? 'text-red-600' : 'text-amber-700'">
                             <x-icon name="clock" class="h-4 w-4" />
-                            Sisa waktu bayar <span class="font-mono tabular-nums" x-text="countdownLabel"></span>
+                            Sisa waktu bayar <span class="tabular-nums" x-text="countdownLabel"></span>
                         </p>
                     </div>
                 </div>

@@ -38,7 +38,7 @@
                     </div>
                 </template>
             </div>
-            <div x-show="countdownLabel" x-cloak class="shrink-0 font-mono text-2xl font-extrabold tabular-nums sm:text-3xl" :class="remaining <= 60 ? 'text-red-600' : 'text-amber-700'" x-text="countdownLabel"></div>
+            <div x-show="countdownLabel" x-cloak class="shrink-0 text-2xl font-extrabold tabular-nums sm:text-3xl" :class="remaining <= 60 ? 'text-red-600' : 'text-amber-700'" x-text="countdownLabel"></div>
         </div>
 
         <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:items-start">

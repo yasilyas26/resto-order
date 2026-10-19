@@ -33,7 +33,7 @@
                     <div class="relative">
                         <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-500"><x-icon name="user" class="h-5 w-5" /></span>
                         <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username"
-                            :placeholder="tab === 'admin' ? 'admin@restoran.id' : 'kasir01@restoran.id'"
+                            :placeholder="tab === 'admin' ? 'Masukan Email anda' : 'Masukan Email anda'"
                             class="block w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm placeholder-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-200">
                     </div>
                     @error('email')

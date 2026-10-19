@@ -83,7 +83,7 @@
                     <tr class="border-t border-gray-100 hover:bg-gray-50">
                         <td class="px-4 py-4"><input type="checkbox" value="{{ $table->id }}" x-model.number="picked" aria-label="Pilih Meja {{ $table->number }}" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500"></td>
                         <td class="px-4 py-4 font-bold">Meja {{ $table->number }}</td>
-                        <td class="px-4 py-4"><span class="rounded-lg bg-blue-50 px-2.5 py-1 font-mono text-xs font-bold text-brand-700">{{ $table->code }}</span></td>
+                        <td class="px-4 py-4"><span class="rounded-lg bg-blue-50 px-2.5 py-1 tabular-nums text-xs font-bold text-brand-700">{{ $table->code }}</span></td>
                         <td class="px-4 py-4">
                             @if ($table->is_active)
                                 <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">Aktif</span>

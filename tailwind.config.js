@@ -20,8 +20,8 @@ export default {
                 shimmer: 'shimmer 1.4s ease-in-out infinite',
             },
             fontFamily: {
-                // Inter dipakai halaman pelanggan; halaman admin/Breeze tetap Figtree lewat layout masing-masing.
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                // Satu font untuk seluruh web: Inter.
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
                 inter: ['Inter', ...defaultTheme.fontFamily.sans],
             },
             colors: {

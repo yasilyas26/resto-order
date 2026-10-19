@@ -32,7 +32,7 @@
             @if ($state === 'success' && $status['queue'])
                 <div class="mt-6 rounded-2xl border-2 border-brand-600 p-4">
                     <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Nomor antreanmu</div>
-                    <div class="font-mono text-5xl font-extrabold tracking-wide text-brand-700">{{ $status['queue'] }}</div>
+                    <div class="tabular-nums text-5xl font-extrabold tracking-wide text-brand-700">{{ $status['queue'] }}</div>
                     <div class="mt-1 text-xs text-gray-500">Tunjukkan nomor ini kalau dipanggil.</div>
                 </div>
             @endif
@@ -42,7 +42,7 @@
                     <div class="mt-5 inline-flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2 text-amber-800" role="timer" aria-live="off">
                         <x-icon name="clock" class="h-5 w-5" />
                         <span class="text-sm font-semibold">Sisa waktu bayar</span>
-                        <span class="font-mono text-2xl font-extrabold tabular-nums" :class="remaining <= 60 ? 'text-red-600' : ''" x-text="countdownLabel"></span>
+                        <span class="text-2xl font-extrabold tabular-nums" :class="remaining <= 60 ? 'text-red-600' : ''" x-text="countdownLabel"></span>
                     </div>
                 @endif
 
@@ -75,7 +75,7 @@
                             <div class="mt-4 rounded-xl bg-gray-50 p-3">
                                 <div class="text-xs text-gray-500" x-text="field.label"></div>
                                 <div class="mt-1 flex items-center justify-between gap-3">
-                                    <span class="break-all font-mono text-xl font-extrabold tracking-wide" x-text="field.value"></span>
+                                    <span class="break-all tabular-nums text-xl font-extrabold tracking-wide" x-text="field.value"></span>
                                     <button type="button" @click="copyValue(field.value)" class="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100"
                                         x-text="copied === field.value ? 'Tersalin!' : 'Salin'"></button>
                                 </div>

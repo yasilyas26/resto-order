@@ -68,7 +68,7 @@
                     <div class="p-4" :class="order.kitchen === 'done' ? 'bg-slate-50' : 'bg-gradient-to-br from-brand-50 via-white to-white'">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span x-show="order.queue" class="rounded-xl border-2 bg-white px-3 py-1 font-mono text-xl font-extrabold tracking-wide"
+                                <span x-show="order.queue" class="rounded-xl border-2 bg-white px-3 py-1 tabular-nums text-xl font-extrabold tracking-wide"
                                     :class="order.kitchen === 'done' ? 'border-slate-300 text-slate-700' : 'border-brand-600 text-brand-700'"
                                     x-text="order.queue" title="Nomor antrean"></span>
                                 <span x-show="order.table" class="rounded-xl px-3 py-1.5 text-xl font-extrabold uppercase text-white"
@@ -84,7 +84,7 @@
                         </div>
 
                         <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3">
-                            <span class="font-mono text-[11px] text-gray-500" x-text="'#' + order.code"></span>
+                            <span class="tabular-nums text-[11px] text-gray-500" x-text="'#' + order.code"></span>
 
                             <div class="flex items-center gap-2">
                                 <span class="rounded-full border px-2.5 py-0.5 text-[11px] font-bold"

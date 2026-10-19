@@ -69,7 +69,7 @@
                             <div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="text-lg font-bold" x-text="order.code"></span>
-                                    <span class="rounded bg-brand-50 px-2 py-0.5 font-mono text-xs font-bold text-brand-700" x-show="order.queue" x-text="order.queue" title="Nomor antrean"></span>
+                                    <span class="rounded bg-brand-50 px-2 py-0.5 tabular-nums text-xs font-bold text-brand-700" x-show="order.queue" x-text="order.queue" title="Nomor antrean"></span>
                                     <span class="rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-gray-600" x-show="order.table" x-text="'Meja ' + order.table"></span>
                                 </div>
                                 <div class="text-xs text-gray-500" x-text="order.createdAt + ' · ' + order.orderType"></div>

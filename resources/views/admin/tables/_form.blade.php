@@ -18,7 +18,7 @@
 
 @isset($table)
     <p class="mt-4 text-sm text-gray-500">
-        Kode meja: <span class="font-mono font-semibold">{{ $table->code }}</span>.
+        Kode meja: <span class="tabular-nums font-semibold">{{ $table->code }}</span>.
         Kode tidak berubah saat nomor diganti; pakai tombol "Kode baru" di daftar meja kalau perlu diganti.
     </p>
 @endisset
