@@ -129,16 +129,16 @@
 
                     <button type="button" @click="submit()" :disabled="!canSubmit"
                         class="mt-5 w-full rounded-xl bg-brand-600 px-4 py-4 text-base font-bold text-white shadow-lg shadow-brand-600/25 hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
-                        x-text="loading ? 'Memproses…' : 'Bayar Sekarang - ' + $rupiah($store.cart.subtotal)"></button>
+                        x-text="loading ? 'Memproses…' : 'Lanjut ke Pembayaran - ' + $rupiah($store.cart.subtotal)"></button>
                 </section>
 
-                {{-- Metode pembayaran: dipilih di jendela Midtrans, jadi di sini hanya informasi --}}
+                {{-- Metode pembayaran: dipilih di halaman berikutnya, jadi di sini hanya informasi --}}
                 <section class="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
                     <h2 class="text-sm font-bold">Metode Pembayaran</h2>
-                    <p class="mt-1 text-xs text-gray-500">Pilih metode di jendela pembayaran setelah menekan tombol bayar.</p>
+                    <p class="mt-1 text-xs text-gray-500">Kamu memilih metodenya di halaman berikutnya, setelah pesanan dibuat.</p>
                     <ul class="mt-3 space-y-2 text-sm">
                         @foreach ([
-                            ['QRIS', 'Semua e-wallet: Dana, OVO, ShopeePay, dan lainnya', 'qr'],
+                            ['QRIS', 'Scan dengan e-wallet atau mobile banking apa pun', 'qr'],
                             ['GoPay', 'Buka aplikasi atau scan barcode', 'wallet'],
                             ['Transfer Virtual Account', 'BCA, Mandiri, BRI, BNI', 'bank'],
                         ] as [$name, $desc, $icon])
@@ -158,9 +158,4 @@
 
     @include('visitor.partials.menu-modal', ['menus' => $menusForScript])
 
-    @push('scripts')
-        @if (filled($clientKey))
-            <script src="{{ $snapUrl }}" data-client-key="{{ $clientKey }}"></script>
-        @endif
-    @endpush
 </x-visitor-layout>

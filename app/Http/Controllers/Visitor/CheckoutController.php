@@ -12,6 +12,7 @@ use App\Services\Payments\ChangePaymentMethod;
 use App\Services\Payments\PaymentAttempts;
 use App\Services\Payments\PaymentGateway;
 use App\Services\Payments\PaymentGatewayException;
+use App\Support\PaymentMethods;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,14 +20,13 @@ use Illuminate\Validation\Rule;
 class CheckoutController extends Controller
 {
     /**
-     * Membuat order dari keranjang, lalu meminta Snap token.
+     * Membuat order dari keranjang (belum membuka pembayaran: itu terjadi di halaman Pilih Metode).
      * Dipanggil lewat fetch() dari halaman keranjang, jadi balasannya JSON.
      */
     public function store(
         Request $request,
         PaymentGateway $gateway,
         PlaceOrder $placeOrder,
-        PaymentAttempts $attempts,
     ): JsonResponse {
         $table = Table::fromSession();
 
@@ -61,25 +61,39 @@ class CheckoutController extends Controller
             return response()->json(['message' => $e->getMessage(), 'errors' => ['items' => $e->errors]], 422);
         }
 
-        return $this->paymentResponse($order, $attempts, 201);
+        // Pembayaran sengaja belum dibuka: pelanggan memilih metode dulu di halaman berikutnya, dan batas waktu
+        // bayar baru mulai berjalan saat dia menekan Bayar di sana.
+        return response()->json([
+            'order_code' => $order->code,
+            'order_url' => route('order.show', $order),
+            'checkout_url' => route('order.checkout', $order),
+        ], 201);
     }
 
     /** Membuka pembayaran lagi untuk order yang belum lunas (popup ditutup, kedaluwarsa, atau gagal). */
-    public function pay(Order $order, PaymentGateway $gateway, PaymentAttempts $attempts): JsonResponse
+    public function pay(Request $request, Order $order, PaymentGateway $gateway, PaymentAttempts $attempts, ChangePaymentMethod $change): JsonResponse
     {
+        $data = $request->validate(['method' => ['nullable', Rule::in(PaymentMethods::keys())]]);
+
         if ($order->isPaid()) {
-            return response()->json(['message' => 'Pesanan ini sudah dibayar.'], 409);
+            return response()->json(['message' => 'Pesanan ini sudah dibayar.', 'result_url' => route('order.result', $order)], 409);
         }
 
         if (! $gateway->isConfigured()) {
             return $this->notConfigured();
         }
 
+        // Metode dipilih di halaman "Pilih Metode": lewat ChangePaymentMethod supaya percobaan lama
+        // yang metodenya beda dibatalkan dengan aman (dan tidak pernah terbayar dua kali).
+        if (! empty($data['method'])) {
+            return $this->changeMethod($order, $gateway, $change, $data['method']);
+        }
+
         return $this->paymentResponse($order, $attempts, 200);
     }
 
     /** Ganti metode bayar: transaksi lama dibatalkan, lalu percobaan baru dibuat (lihat ChangePaymentMethod). */
-    public function changeMethod(Order $order, PaymentGateway $gateway, ChangePaymentMethod $change): JsonResponse
+    public function changeMethod(Order $order, PaymentGateway $gateway, ChangePaymentMethod $change, ?string $method = null): JsonResponse
     {
         if ($order->isPaid()) {
             return response()->json(['message' => 'Pesanan ini sudah dibayar.'], 409);
@@ -90,9 +104,11 @@ class CheckoutController extends Controller
         }
 
         try {
-            $payment = $change->execute($order);
+            $payment = $change->execute($order, $method);
         } catch (PaymentGatewayException) {
-            return response()->json(['message' => 'Metode pembayaran belum bisa diganti. Tunggu sebentar lalu coba lagi.'], 502);
+            return response()->json(['message' => $method !== null
+                ? 'Metode pembayaran ini belum bisa dipakai saat ini. Coba metode lain, atau ulangi sebentar lagi.'
+                : 'Metode pembayaran belum bisa diganti. Tunggu sebentar lalu coba lagi.'], 502);
         }
 
         // Ternyata transaksi lama sudah dibayar: tidak ada percobaan baru, supaya tidak terbayar dua kali.
@@ -103,6 +119,12 @@ class CheckoutController extends Controller
         return response()->json([
             'order_code' => $order->code,
             'order_url' => route('order.show', $order),
+            'checkout_url' => route('order.checkout', $order),
+            'result_url' => route('order.result', $order),
+            // snap: buka popup dengan snap_token (kartu). charge: transaksi sudah dibuat, tinggal tampilkan cara bayarnya di halaman hasil.
+            'mode' => $payment->snap_token ? 'snap' : 'charge',
+            'expires_at' => $order->fresh()->expires_at?->toIso8601String(),
+            'server_time' => now()->toIso8601String(),
             'snap_token' => $payment->snap_token,
         ]);
     }
@@ -123,6 +145,12 @@ class CheckoutController extends Controller
         return response()->json([
             'order_code' => $order->code,
             'order_url' => route('order.show', $order),
+            'checkout_url' => route('order.checkout', $order),
+            'result_url' => route('order.result', $order),
+            // snap: buka popup dengan snap_token (kartu). charge: transaksi sudah dibuat, tinggal tampilkan cara bayarnya di halaman hasil.
+            'mode' => $payment->snap_token ? 'snap' : 'charge',
+            'expires_at' => $order->fresh()->expires_at?->toIso8601String(),
+            'server_time' => now()->toIso8601String(),
             'snap_token' => $payment->snap_token,
         ], $status);
     }

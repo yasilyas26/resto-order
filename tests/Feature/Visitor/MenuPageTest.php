@@ -61,7 +61,7 @@ class MenuPageTest extends TestCase
         $this->assertStringNotContainsString('Level 3', $html);
     }
 
-    public function test_cart_page_renders_with_the_midtrans_snap_script_when_configured(): void
+    public function test_cart_page_leads_to_the_payment_method_page_and_does_not_load_snap(): void
     {
         $f = $this->menuFixture();
         config(['midtrans.client_key' => 'SB-Mid-client-test']);
@@ -69,9 +69,8 @@ class MenuPageTest extends TestCase
         $this->withSession(['table_id' => $f['table']->id])->get('/keranjang')
             ->assertOk()
             ->assertSee('Keranjang Pesanan (Meja A07)')
-            ->assertSee('Bayar Sekarang')
-            ->assertSee('snap.js', false)
-            ->assertSee('SB-Mid-client-test')
+            ->assertSee('Lanjut ke Pembayaran')
+            ->assertDontSee('snap.js', false) // popup Snap dibuka dari halaman pilih metode, bukan dari keranjang
             ->assertDontSee('SB-Mid-server', false);
     }
 

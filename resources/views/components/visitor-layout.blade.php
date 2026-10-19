@@ -15,11 +15,16 @@
     @vite(['resources/css/app.css', 'resources/js/visitor.js'])
 </head>
 <body class="min-h-screen font-inter text-gray-900 antialiased {{ $bg }}">
-    @if ($header)
-        @include('visitor.partials.header')
-    @endif
+    {{-- Footer selalu di dasar layar walau isi halaman pendek. Isinya dibungkus div biasa (bukan flex) supaya mx-auto di halaman tetap bekerja. --}}
+    <div class="flex min-h-screen flex-col">
+        @if ($header)
+            @include('visitor.partials.header')
+        @endif
 
-    {{ $slot }}
+        <div class="flex-1">{{ $slot }}</div>
+
+        @include('visitor.partials.footer')
+    </div>
 
     {{-- Pemberitahuan singkat (mis. "Mie Gacor ditambahkan ke keranjang") --}}
     <div x-data x-cloak x-show="$store.cart.toast"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MenuController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Visitor\MenuController as VisitorMenuController;
 use App\Http\Controllers\Visitor\OnboardingController;
 use App\Http\Controllers\Visitor\OrderHistoryController;
 use App\Http\Controllers\Visitor\OrderStatusController;
+use App\Http\Controllers\Visitor\PaymentQrController;
 use Illuminate\Support\Facades\Route;
 
 // ---------------------------------------------------------------------------
@@ -47,7 +49,12 @@ Route::post('/order/{order}/bayar', [CheckoutController::class, 'pay'])->middlew
 Route::post('/order/{order}/ganti-metode', [CheckoutController::class, 'changeMethod'])->middleware('throttle:checkout')->name('order.change-method');
 
 // Status order, terbuka untuk yang tahu kode ordernya.
+// Harus di atas /order/{order}, kalau tidak "selesai" dianggap kode order.
+Route::get('/order/selesai', [OrderStatusController::class, 'finish'])->name('order.finish');
 Route::get('/order/{order}', [OrderStatusController::class, 'show'])->name('order.show');
+Route::get('/order/{order}/bayar', [OrderStatusController::class, 'checkout'])->name('order.checkout');
+Route::get('/order/{order}/qr', PaymentQrController::class)->middleware('throttle:30,1')->name('order.qr');
+Route::get('/order/{order}/hasil', [OrderStatusController::class, 'result'])->name('order.result');
 Route::get('/order/{order}/status', [OrderStatusController::class, 'status'])->middleware('throttle:60,1')->name('order.status');
 Route::post('/order/{order}/cek-pembayaran', [OrderStatusController::class, 'recheck'])->middleware('throttle:10,1')->name('order.recheck');
 
@@ -76,6 +83,8 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
+        Route::patch('account/name', [AccountController::class, 'updateName'])->name('account.name');
+        Route::put('account/password', [AccountController::class, 'updatePassword'])->name('account.password');
         Route::get('dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');
 
         Route::resource('categories', CategoryController::class)->except('show');

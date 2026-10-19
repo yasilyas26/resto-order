@@ -22,11 +22,12 @@ class ChangePaymentMethod
     ) {}
 
     /**
+     * @param  string|null  $method  kunci PaymentMethods yang dipilih pelanggan (null = tidak dibatasi)
      * @return Payment|null percobaan baru yang siap dibayar, atau null kalau order ternyata sudah lunas
      *
      * @throws PaymentGatewayException kalau Midtrans tidak bisa dihubungi atau menolak pembatalan (tidak ada yang berubah)
      */
-    public function execute(Order $order): ?Payment
+    public function execute(Order $order, ?string $method = null): ?Payment
     {
         foreach ($order->payments()->orderBy('id')->get() as $payment) {
             if (! $payment->isOpen()) {
@@ -35,8 +36,13 @@ class ChangePaymentMethod
 
             $status = $this->gateway->fetchStatus($payment->midtrans_order_id);
 
-            // Belum ada di Midtrans: pelanggan belum memilih metode, jadi tokennya masih bebas dipakai untuk memilih lagi.
+            // Belum ada di Midtrans: pelanggan belum memilih metode di popup, jadi tokennya masih bebas dipakai.
+            // Kalau yang diminta metode lain, token itu dibuang (belum ada uang yang terlibat) dan dibuatkan yang baru.
             if ($status === null) {
+                if ($method !== null && $payment->method !== $method) {
+                    $payment->update(['transaction_status' => 'cancel']);
+                }
+
                 continue;
             }
 
@@ -48,11 +54,16 @@ class ChangePaymentMethod
             }
 
             if (($status['transaction_status'] ?? null) === 'pending') {
+                // Metode yang sama dan masih berlaku: pelanggan hanya kembali ke transaksinya (nomor VA / QR yang sama), bukan ganti.
+                if ($method !== null && $payment->method === $method && $order->fresh()->expires_at?->isFuture()) {
+                    continue;
+                }
+
                 $this->gateway->cancel($payment->midtrans_order_id);
                 $payment->update(['transaction_status' => 'cancel']);
             }
         }
 
-        return $this->attempts->current($order->fresh());
+        return $this->attempts->current($order->fresh(), $method);
     }
 }

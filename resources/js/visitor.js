@@ -9,6 +9,8 @@ import history from './visitor/components/history';
 import menuModal from './visitor/components/menuModal';
 import orderStatus from './visitor/components/orderStatus';
 import passwordField from './visitor/components/passwordField';
+import paymentMethod from './visitor/components/paymentMethod';
+import paymentResult from './visitor/components/paymentResult';
 import scanner from './visitor/components/scanner';
 import { formatRupiah, lineTotal } from './visitor/lib/cart-logic';
 
@@ -26,5 +28,7 @@ Alpine.data('checkout', checkout);
 Alpine.data('orderStatus', orderStatus);
 Alpine.data('history', history);
 Alpine.data('passwordField', passwordField);
+Alpine.data('paymentMethod', paymentMethod);
+Alpine.data('paymentResult', paymentResult);
 
 Alpine.start();

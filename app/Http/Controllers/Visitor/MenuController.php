@@ -26,8 +26,6 @@ class MenuController extends Controller
         return view('visitor.cart', [
             'table' => $request->attributes->get('table'),
             'menusForScript' => MenuCatalog::forScript(MenuCatalog::categories()),
-            'snapUrl' => config('midtrans.snap_js_url'),
-            'clientKey' => config('midtrans.client_key'),
         ]);
     }
 }

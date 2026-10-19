@@ -53,7 +53,8 @@ class PaymentNotificationHandler
             $payment->update([
                 'transaction_status' => $payload['transaction_status'] ?? $payment->transaction_status,
                 'payment_type' => $payload['payment_type'] ?? $payment->payment_type,
-                'raw_payload' => $payload,
+                // Digabung, bukan diganti: notifikasi pending sering lebih ringkas dari balasan charge, dan nomor VA / QR-nya tidak boleh hilang.
+                'raw_payload' => array_merge($payment->raw_payload ?? [], $payload),
             ]);
 
             $this->applyToOrder($order, $this->map($payload), $payload);

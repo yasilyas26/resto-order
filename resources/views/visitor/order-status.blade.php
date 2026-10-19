@@ -5,8 +5,8 @@
         'table' => $order->table?->number,
         'statusUrl' => route('order.status', $order),
         'recheckUrl' => route('order.recheck', $order),
-        'payUrl' => route('order.pay', $order),
-        'changeUrl' => route('order.change-method', $order),
+        'checkoutUrl' => route('order.checkout', $order),
+        'resultUrl' => route('order.result', $order),
         'initial' => $status,
     ];
 @endphp
@@ -101,20 +101,27 @@
                     <div>
                         <div class="font-bold" x-text="status.label"></div>
                         <p class="text-sm text-gray-600" x-text="status.message">{{ $status['message'] }}</p>
+                        {{-- Hitung mundur: mulai saat pelanggan menekan Bayar di halaman Pilih Metode --}}
+                        <p x-show="countdownLabel" x-cloak class="mt-1 flex items-center gap-1.5 text-sm font-bold"
+                            :class="remaining <= 60 ? 'text-red-600' : 'text-amber-700'">
+                            <x-icon name="clock" class="h-4 w-4" />
+                            Sisa waktu bayar <span class="font-mono tabular-nums" x-text="countdownLabel"></span>
+                        </p>
                     </div>
                 </div>
 
                 <div x-show="status.payable" x-cloak class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                    <button type="button" @click="changeMethod()" :disabled="busy"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60">
+                    <a href="{{ route('order.checkout', [$order, 'ganti' => 1]) }}"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand-600 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-700 hover:bg-brand-100">
                         <x-icon name="refresh" class="h-4 w-4" />
                         Ganti metode bayar
-                    </button>
-                    <button type="button" @click="pay()" :disabled="busy"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60">
+                    </a>
+                    {{-- Sudah menekan Bayar: lanjut ke petunjuk bayarnya. Belum: pilih metode dulu. --}}
+                    <a :href="status.expiresAt ? resultUrl : checkoutUrl"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700">
                         <x-icon name="wallet" class="h-4 w-4" />
-                        <span x-text="busy ? 'Memproses…' : 'Bayar Sekarang'">Bayar Sekarang</span>
-                    </button>
+                        <span x-text="status.expiresAt ? 'Lihat Cara Bayar' : 'Bayar Sekarang'">Bayar Sekarang</span>
+                    </a>
                 </div>
             </div>
 
@@ -214,8 +221,5 @@
     </main>
 
     @push('scripts')
-        @if (filled($clientKey))
-            <script src="{{ $snapUrl }}" data-client-key="{{ $clientKey }}"></script>
-        @endif
     @endpush
 </x-visitor-layout>

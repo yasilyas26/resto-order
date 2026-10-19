@@ -1,10 +1,15 @@
 import { getJson, postJson } from '../lib/http';
+import { formatClock, offsetFrom, secondsLeft } from '../lib/countdown';
 import { rememberOrder } from '../lib/storage';
 
 const POLL_MS = 5000; // keputusan proyek: polling ±5 detik, bukan WebSocket
 
 /** Halaman status order: polling status, tombol bayar, cek ulang pembayaran, salin kode. */
-export default function orderStatus({ code, table, statusUrl, recheckUrl, payUrl, changeUrl, initial }) {
+export default function orderStatus({ code, table, statusUrl, recheckUrl, checkoutUrl, resultUrl, initial }) {
+    // checkoutUrl / resultUrl dipakai template untuk tombol bayar.
+    void checkoutUrl;
+    void resultUrl;
+
     return {
         code,
         table,
@@ -13,8 +18,11 @@ export default function orderStatus({ code, table, statusUrl, recheckUrl, payUrl
         message: '',
         copied: false,
         _timer: null,
+        now: Date.now(), // diperbarui tiap detik supaya hitung mundur ikut bergerak
+        _offset: offsetFrom(initial.serverTime),
 
         init() {
+            setInterval(() => this.tick(), 1000);
             // Order ini selalu masuk riwayat perangkat (juga kalau halamannya dibuka dari tautan).
             rememberOrder(code);
             this.schedule();
@@ -28,6 +36,27 @@ export default function orderStatus({ code, table, statusUrl, recheckUrl, payUrl
         /** Polling hanya selama order masih berjalan dan tab sedang dibuka. */
         get polling() {
             return ['waiting', 'paid', 'cooking'].includes(this.status.stage);
+        },
+
+        /** Sisa detik batas bayar; null kalau waktunya belum mulai (pelanggan belum menekan Bayar) atau order bukan "menunggu". */
+        get remaining() {
+            void this.now; // jadikan reaktif terhadap detak jam
+
+            return this.status.stage === 'waiting' ? secondsLeft(this.status.expiresAt, this._offset) : null;
+        },
+
+        get countdownLabel() {
+            return this.remaining === null ? '' : formatClock(this.remaining);
+        },
+
+        tick() {
+            this.now = Date.now();
+
+            // Waktu habis: minta status terbaru, yang sudah "kedaluwarsa" menurut server.
+            if (this.remaining === 0 && !this._expiring) {
+                this._expiring = true;
+                this.refresh().finally(() => (this._expiring = false));
+            }
         },
 
         schedule() {
@@ -47,6 +76,7 @@ export default function orderStatus({ code, table, statusUrl, recheckUrl, payUrl
 
                 if (ok) {
                     this.status = data;
+                    this._offset = offsetFrom(data.serverTime);
                 }
             } catch {
                 // koneksi putus sebentar; percobaan berikutnya jalan sendiri
@@ -65,50 +95,6 @@ export default function orderStatus({ code, table, statusUrl, recheckUrl, payUrl
                     this.status = data;
                     this.message = data.paid ? '' : 'Pembayaran belum tercatat. Kalau sudah membayar, tunggu sebentar lalu cek lagi.';
                 }
-            } catch {
-                this.message = 'Tidak bisa menghubungi server. Periksa koneksi internetmu.';
-            } finally {
-                this.busy = false;
-            }
-        },
-
-        /** Ganti metode bayar (mis. QRIS ke kartu): server membatalkan transaksi lama lalu membuka yang baru. */
-        changeMethod() {
-            return this.pay(changeUrl);
-        },
-
-        async pay(url = payUrl) {
-            this.busy = true;
-            this.message = '';
-
-            try {
-                const { ok, data } = await postJson(url);
-
-                if (!ok) {
-                    this.message = data.message || 'Pembayaran belum bisa dibuka. Coba lagi.';
-
-                    // Ternyata sudah dibayar (mis. di jendela lain): ambil status terbaru supaya halaman ikut berubah.
-                    if (url === changeUrl && data.message?.includes('sudah kami terima')) {
-                        await this.recheck();
-                    }
-
-                    return;
-                }
-
-                if (!window.snap) {
-                    this.message = 'Jendela pembayaran gagal dimuat. Muat ulang halaman lalu coba lagi.';
-
-                    return;
-                }
-
-                const done = () => this.recheck();
-
-                window.snap.pay(data.snap_token, {
-                    onSuccess: done,
-                    onPending: done,
-                    onError: done,
-                    onClose: done,
-                });
             } catch {
                 this.message = 'Tidak bisa menghubungi server. Periksa koneksi internetmu.';
             } finally {

@@ -262,6 +262,45 @@ class AdminRedesignTest extends TestCase
         }
     }
 
+    // ---- Menu akun ---------------------------------------------------------------
+
+    public function test_admin_can_change_their_name_from_the_account_menu(): void
+    {
+        $this->get('/admin')->assertSee('Ganti Nama')->assertSee('Ganti Kata Sandi')->assertSee('Keluar');
+
+        $this->patch('/admin/account/name', ['name' => '  Admin Baru  '])->assertRedirect()->assertSessionHas('status');
+        $this->assertSame('Admin Baru', auth()->user()->fresh()->name);
+
+        $this->patch('/admin/account/name', ['name' => ''])->assertSessionHasErrorsIn('adminName', 'name');
+    }
+
+    public function test_admin_changes_password_with_current_password_and_confirmation(): void
+    {
+        $admin = User::factory()->admin()->create(['password' => bcrypt('LamaSandi1')]);
+        $this->actingAs($admin);
+
+        $this->put('/admin/account/password', ['current_password' => 'salah', 'password' => 'BaruSandi1', 'password_confirmation' => 'BaruSandi1'])
+            ->assertSessionHasErrorsIn('adminPassword', 'current_password');
+        $this->put('/admin/account/password', ['current_password' => 'LamaSandi1', 'password' => 'BaruSandi1', 'password_confirmation' => 'beda'])
+            ->assertSessionHasErrorsIn('adminPassword', 'password');
+        $this->put('/admin/account/password', ['current_password' => 'LamaSandi1', 'password' => 'lemah', 'password_confirmation' => 'lemah'])
+            ->assertSessionHasErrorsIn('adminPassword', 'password');
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('LamaSandi1', $admin->fresh()->password));
+
+        $this->put('/admin/account/password', ['current_password' => 'LamaSandi1', 'password' => 'BaruSandi1', 'password_confirmation' => 'BaruSandi1'])
+            ->assertSessionHasNoErrors()->assertSessionHas('status');
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('BaruSandi1', $admin->fresh()->password));
+    }
+
+    public function test_account_endpoints_are_closed_to_staff_and_customers(): void
+    {
+        foreach ([User::factory()->staff()->create(), User::factory()->create()] as $user) {
+            $this->actingAs($user);
+            $this->patch('/admin/account/name', ['name' => 'X'])->assertForbidden();
+            $this->put('/admin/account/password', ['password' => 'BaruSandi1', 'password_confirmation' => 'BaruSandi1'])->assertForbidden();
+        }
+    }
+
     public function test_purge_is_scheduled_daily(): void
     {
         $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())->filter(fn ($e) => str_contains($e->command, 'trash:purge'));

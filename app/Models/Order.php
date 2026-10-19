@@ -7,6 +7,7 @@ use App\Enums\OrderStage;
 use App\Enums\OrderType;
 use App\Enums\PaymentStatus;
 use App\Enums\RefundStatus;
+use App\Support\PaymentInstructions;
 use App\Support\PaymentLabel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -150,6 +151,11 @@ class Order extends Model
             'paid' => $this->isPaid(),
             'queue' => $this->queueLabel(),
             'payable' => $this->canBePaid(),
+            // Batas bayar untuk hitung mundur. Null = pelanggan belum menekan Bayar (waktu belum mulai) atau sudah tidak relevan.
+            'expiresAt' => $stage === OrderStage::Waiting ? $this->expires_at?->toIso8601String() : null,
+            'serverTime' => now()->toIso8601String(),
+            // Cara bayar (QR / nomor VA / kode minimarket) setelah pelanggan memilih metode; null kalau belum ada.
+            'instructions' => PaymentInstructions::for($this),
             'refund' => $this->refund_status->value,
             'refundAmount' => $this->refund_amount,
             'paidAt' => $this->paid_at ? $this->paid_at->translatedFormat('H:i').' WIB' : null,

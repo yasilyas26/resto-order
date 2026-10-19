@@ -58,8 +58,14 @@ class CheckoutTest extends TestCase
         $response->assertJson([
             'order_code' => $order->code,
             'order_url' => url('/order/'.$order->code),
-            'snap_token' => 'snap-token-1-'.$order->code.'-1',
+            'checkout_url' => url('/order/'.$order->code.'/bayar'),
         ]);
+        $response->assertJsonMissingPath('snap_token');
+
+        // Pembayaran belum dibuka dan hitung mundur belum jalan: itu mulai saat pelanggan menekan Bayar.
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertNull($order->expires_at);
+        $this->assertSame([], $this->gateway->tokenRequests);
 
         $this->assertMatchesRegularExpression('/^ORD-[A-HJ-NP-Z2-9]{6}$/', $order->code);
         $this->assertSame($this->f['table']->id, $order->table_id);
@@ -110,6 +116,8 @@ class CheckoutTest extends TestCase
         $this->checkout()->assertCreated();
 
         $order = Order::firstOrFail();
+        $this->postJson("/order/{$order->code}/bayar")->assertOk();
+        $order->refresh();
         $payment = Payment::firstOrFail();
 
         $this->assertSame($order->id, $payment->order_id);
@@ -119,7 +127,7 @@ class CheckoutTest extends TestCase
         $this->assertNull($payment->transaction_status);
 
         $this->assertSame(
-            ['midtransOrderId' => $order->code.'-1', 'grossAmount' => 43000, 'customerName' => 'Meja A07', 'expiryMinutes' => 15],
+            ['midtransOrderId' => $order->code.'-1', 'grossAmount' => 43000, 'customerName' => 'Meja A07', 'expiryMinutes' => 15, 'enabledPayments' => null],
             $this->gateway->tokenRequests[0],
         );
         $this->assertTrue($order->expires_at->isFuture());
@@ -257,16 +265,18 @@ class CheckoutTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
-    public function test_when_midtrans_fails_the_order_is_kept_and_the_visitor_is_told_where_to_retry(): void
+    public function test_when_midtrans_fails_on_pay_the_order_is_kept_and_the_visitor_is_told_where_to_retry(): void
     {
-        $this->gateway->failTokens = true;
-
-        $response = $this->checkout()->assertStatus(502);
-
+        $this->checkout()->assertCreated();
         $order = Order::firstOrFail();
+
+        $this->gateway->failTokens = true;
+        $response = $this->postJson("/order/{$order->code}/bayar")->assertStatus(502);
+
         $response->assertJsonPath('order_code', $order->code)->assertJsonPath('order_url', url('/order/'.$order->code));
-        $this->assertSame(PaymentStatus::Pending, $order->payment_status);
+        $this->assertSame(PaymentStatus::Pending, $order->fresh()->payment_status);
         $this->assertNull(Payment::firstOrFail()->snap_token);
+        $this->assertNull($order->fresh()->expires_at, 'hitung mundur tidak mulai kalau token gagal dibuat');
     }
 
     public function test_paying_again_reuses_the_open_token_instead_of_piling_up_transactions(): void
@@ -285,8 +295,10 @@ class CheckoutTest extends TestCase
     {
         $this->checkout()->assertCreated();
         $order = Order::firstOrFail();
+        $this->postJson("/order/{$order->code}/bayar")->assertOk();
         Payment::firstOrFail()->update(['transaction_status' => 'expire']);
         $order->payment_status = PaymentStatus::Expired;
+        $order->expires_at = now()->subMinute();
         $order->save();
 
         $this->postJson("/order/{$order->code}/bayar")->assertOk();
@@ -297,9 +309,11 @@ class CheckoutTest extends TestCase
 
     public function test_a_failed_token_request_can_be_retried_from_the_status_page(): void
     {
-        $this->gateway->failTokens = true;
-        $this->checkout()->assertStatus(502);
+        $this->checkout()->assertCreated();
         $order = Order::firstOrFail();
+
+        $this->gateway->failTokens = true;
+        $this->postJson("/order/{$order->code}/bayar")->assertStatus(502);
 
         $this->gateway->failTokens = false;
         $this->postJson("/order/{$order->code}/bayar")->assertOk()->assertJsonStructure(['snap_token']);

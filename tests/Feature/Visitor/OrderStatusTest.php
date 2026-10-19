@@ -205,4 +205,16 @@ class OrderStatusTest extends TestCase
         $this->withSession(['table_id' => $this->f['table']->id])->get('/order/ORD-ABCDEF')
             ->assertSee('href="'.url('/menu').'"', false);
     }
+
+    public function test_midtrans_finish_redirect_returns_the_customer_to_their_order_page(): void
+    {
+        $this->get('/order/selesai?order_id=ORD-ABCDEF-1&status_code=200&transaction_status=settlement')
+            ->assertRedirect(route('order.result', $this->order));
+    }
+
+    public function test_finish_redirect_with_unknown_or_missing_order_id_goes_home(): void
+    {
+        $this->get('/order/selesai?order_id=ORD-TIDAKADA-1')->assertRedirect(route('home'));
+        $this->get('/order/selesai')->assertRedirect(route('home'));
+    }
 }

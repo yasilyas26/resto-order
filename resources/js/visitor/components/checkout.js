@@ -3,7 +3,7 @@ import { toPayload } from '../lib/cart-logic';
 import { errorMessages, postJson } from '../lib/http';
 import { rememberOrder } from '../lib/storage';
 
-/** Form checkout: kirim keranjang ke server, lalu buka popup pembayaran Midtrans Snap. */
+/** Form checkout: kirim keranjang ke server, lalu arahkan ke halaman pilih metode pembayaran. */
 export default function checkout({ url }) {
     return {
         loading: false,
@@ -53,7 +53,8 @@ export default function checkout({ url }) {
                     return;
                 }
 
-                this.openPayment(data);
+                // Order tersimpan: lanjut ke halaman Pilih Metode Pembayaran (popup Snap dibuka dari sana).
+                window.location.href = data.checkout_url || data.order_url;
             } catch {
                 this.errors = ['Tidak bisa menghubungi server. Periksa koneksi internetmu.'];
             } finally {
@@ -64,25 +65,6 @@ export default function checkout({ url }) {
         afterOrderCreated(data) {
             rememberOrder(data.order_code);
             Alpine.store('cart').clear();
-        },
-
-        openPayment(data) {
-            const go = () => (window.location.href = data.order_url);
-
-            if (!window.snap) {
-                // Skrip Midtrans gagal dimuat (koneksi/pemblokir iklan): lanjut ke halaman status yang punya tombol bayar.
-                go();
-
-                return;
-            }
-
-            // Callback ini hanya mengarahkan ke halaman status. Status lunas ditentukan webhook Midtrans, bukan browser.
-            window.snap.pay(data.snap_token, {
-                onSuccess: go,
-                onPending: go,
-                onError: go,
-                onClose: go,
-            });
         },
     };
 }

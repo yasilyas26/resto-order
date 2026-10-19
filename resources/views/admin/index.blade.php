@@ -11,27 +11,8 @@
             <span x-show="offline" x-cloak class="text-red-600">Koneksi terputus, mencoba lagi…</span>
         </p>
 
-        {{-- Tiga angka hari ini --}}
-        <div class="grid gap-4 md:grid-cols-3">
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <div class="flex items-center justify-between text-sm text-gray-700">Omzet Hari Ini <x-icon name="bank" class="h-5 w-5 text-gray-500" /></div>
-                <div class="mt-6 text-3xl font-extrabold tracking-tight" x-text="rupiah(stats.revenue)"></div>
-            </div>
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <div class="flex items-center justify-between text-sm text-gray-700">Pesanan Selesai <x-icon name="check" class="h-5 w-5 text-gray-500" /></div>
-                <div class="mt-6 text-3xl font-extrabold tracking-tight"><span x-text="stats.completed"></span> <span class="text-base font-medium text-gray-600">Pesanan</span></div>
-            </div>
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <div class="flex items-center justify-between text-sm text-gray-700">Rata-rata Waktu Masak <x-icon name="clock" class="h-5 w-5 text-gray-500" /></div>
-                <div class="mt-6 text-3xl font-extrabold tracking-tight">
-                    <span x-text="stats.avgCookMinutes === null ? '–' : String(stats.avgCookMinutes).replace('.', ',')"></span>
-                    <span class="text-base font-medium text-gray-600">Menit</span>
-                </div>
-            </div>
-        </div>
-
         {{-- Grafik omzet harian --}}
-        <section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm" aria-labelledby="omzet-title">
+        <section class="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm" aria-labelledby="omzet-title">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <h2 id="omzet-title" class="text-lg font-extrabold tracking-tight">Omzet Harian</h2>
@@ -55,7 +36,7 @@
             </label>
 
             <div x-ref="chart" class="relative mt-4 transition-opacity" :class="loading ? 'opacity-50' : ''" @mouseleave="hover = null">
-                {{-- Isi digambar dari JS (svgMarkup): Alpine tidak bisa x-for di dalam <svg>. Angka pasti ada di tabel di bawah. --}}
+                {{-- Isi digambar dari JS (svgMarkup): Alpine tidak bisa x-for di dalam <svg>. --}}
                 <svg :width="chartW" :height="chartH" :viewBox="`0 0 ${chartW} ${chartH}`" class="block max-w-full" role="img" aria-label="Grafik omzet"
                     @mouseover="onChartMove($event)" x-html="svgMarkup"></svg>
 
@@ -66,19 +47,26 @@
                     <div class="text-sm font-extrabold" x-text="hover === null ? '' : rupiah(series[hover].revenue)"></div>
                 </div>
             </div>
-
-            {{-- Versi tabel untuk pembaca layar dan yang butuh angka pasti --}}
-            <details class="mt-3 text-sm">
-                <summary class="cursor-pointer font-semibold text-brand-700">Lihat sebagai tabel</summary>
-                <table class="mt-2 w-full max-w-sm text-left">
-                    <tbody>
-                        <template x-for="d in series" :key="d.full">
-                            <tr class="border-t border-gray-100"><td class="py-1" x-text="d.full"></td><td class="py-1 text-right font-semibold" x-text="rupiah(d.revenue)"></td></tr>
-                        </template>
-                    </tbody>
-                </table>
-            </details>
         </section>
+
+        {{-- Tiga angka hari ini --}}
+        <div class="grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div class="flex items-center justify-between text-sm text-gray-700">Omzet Hari Ini <x-icon name="bank" class="h-5 w-5 text-gray-500" /></div>
+                <div class="mt-6 text-3xl font-extrabold tracking-tight" x-text="rupiah(stats.revenue)"></div>
+            </div>
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div class="flex items-center justify-between text-sm text-gray-700">Pesanan Selesai <x-icon name="check" class="h-5 w-5 text-gray-500" /></div>
+                <div class="mt-6 text-3xl font-extrabold tracking-tight"><span x-text="stats.completed"></span> <span class="text-base font-medium text-gray-600">Pesanan</span></div>
+            </div>
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div class="flex items-center justify-between text-sm text-gray-700">Rata-rata Waktu Masak <x-icon name="clock" class="h-5 w-5 text-gray-500" /></div>
+                <div class="mt-6 text-3xl font-extrabold tracking-tight">
+                    <span x-text="stats.avgCookMinutes === null ? '–' : String(stats.avgCookMinutes).replace('.', ',')"></span>
+                    <span class="text-base font-medium text-gray-600">Menit</span>
+                </div>
+            </div>
+        </div>
 
         {{-- Papan dapur --}}
         <div class="mt-10 flex flex-wrap items-end justify-between gap-3">
