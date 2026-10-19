@@ -16,7 +16,7 @@
             <x-icon name="arrow-right" class="h-4 w-4 rotate-180" /> Kembali ke status pesanan
         </a>
 
-        <h1 class="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Pilih Metode Pembayaran</h1>
+        <h1 class="mt-3 text-xl font-extrabold tracking-tight sm:text-3xl">Pilih Metode Pembayaran</h1>
         <p class="mt-1 text-sm text-gray-600">Pesanan <b>{{ $order->code }}</b> · Meja {{ $order->table?->number }}</p>
 
         {{-- Hitung mundur: tidak tampil sama sekali sebelum tombol Bayar ditekan; sesudahnya jalan terus walau popup ditutup --}}
@@ -37,12 +37,12 @@
                     </div>
                 </template>
             </div>
-            <div x-show="countdownLabel" x-cloak class="font-mono text-3xl font-extrabold tabular-nums" :class="remaining <= 60 ? 'text-red-600' : 'text-amber-700'" x-text="countdownLabel"></div>
+            <div x-show="countdownLabel" x-cloak class="shrink-0 font-mono text-2xl font-extrabold tabular-nums sm:text-3xl" :class="remaining <= 60 ? 'text-red-600' : 'text-amber-700'" x-text="countdownLabel"></div>
         </div>
 
-        <div class="mt-6 grid gap-6 lg:grid-cols-[1.15fr_1fr] lg:items-start">
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:items-start">
             {{-- Ringkasan pesanan (kiri, lebih besar): menu, jumlah, deskripsi, level/opsi, catatan --}}
-            <section class="rounded-2xl bg-white p-5 shadow-sm sm:p-6" aria-labelledby="ringkasan-title">
+            <section class="min-w-0 rounded-2xl bg-white p-4 shadow-sm sm:p-6" aria-labelledby="ringkasan-title">
                 <div class="flex items-center justify-between gap-3">
                     <h2 id="ringkasan-title" class="text-lg font-extrabold tracking-tight">Ringkasan Pesanan</h2>
                     <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">{{ $order->items->sum('qty') }} item</span>
@@ -51,11 +51,11 @@
                 <ul class="mt-4 divide-y divide-gray-100">
                     @foreach ($order->items as $item)
                         @php $menu = $item->menu; @endphp
-                        <li class="flex gap-4 py-4 first:pt-0 last:pb-0">
+                        <li class="flex gap-3 py-4 first:pt-0 last:pb-0 sm:gap-4">
                             @if ($menu?->image)
-                                <img src="{{ $menu->imageUrl() }}" alt="" class="h-20 w-20 shrink-0 rounded-xl object-cover sm:h-24 sm:w-24">
+                                <img src="{{ $menu->imageUrl() }}" alt="" class="h-16 w-16 shrink-0 rounded-xl object-cover sm:h-24 sm:w-24">
                             @else
-                                <span class="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-300 sm:h-24 sm:w-24"><x-icon name="bowl" class="h-8 w-8" /></span>
+                                <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-300 sm:h-24 sm:w-24"><x-icon name="bowl" class="h-8 w-8" /></span>
                             @endif
 
                             <div class="min-w-0 flex-1">
@@ -97,9 +97,9 @@
             </section>
 
             {{-- Metode pembayaran (kanan), lalu tombol bayar di bawahnya --}}
-            <div class="space-y-4 lg:sticky lg:top-6">
+            <div class="min-w-0 space-y-4 lg:sticky lg:top-6">
                 {{-- Daftar metode: dropdown per kelompok --}}
-                <section class="rounded-2xl bg-white p-5 shadow-sm sm:p-6" aria-labelledby="metode-title">
+                <section class="rounded-2xl bg-white p-4 shadow-sm sm:p-6" aria-labelledby="metode-title">
                     <h2 id="metode-title" class="text-sm font-bold">Metode Pembayaran</h2>
 
                     <div class="mt-3 space-y-2.5" role="radiogroup" aria-labelledby="metode-title">
@@ -150,11 +150,9 @@
                             </div>
                         @endforeach
                     </div>
-
-                    <p class="mt-4 text-xs text-gray-500">Pembayaran diproses aman oleh Midtrans. Setelah menekan Bayar, nomor Virtual Account atau kode QR-nya langsung tampil di halaman berikutnya.</p>
                 </section>
 
-                <section class="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+                <section class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
                     <div class="flex items-center justify-between">
                         <span class="font-semibold">Total Bayar</span>
                         <span class="text-2xl font-extrabold text-brand-700">Rp {{ number_format($order->total, 0, ',', '.') }}</span>

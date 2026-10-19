@@ -491,4 +491,13 @@ class PaymentPagesTest extends TestCase
         $this->get('/order/ORD-ABCDEF/hasil')->assertOk()->assertSee('&copy; 2031 PT. '.config('app.name').'. All Rights Reserved', false);
         $this->get('/order/ORD-ABCDEF/bayar')->assertOk()->assertSee('All Rights Reserved');
     }
+
+    public function test_cart_lists_the_same_payment_methods_as_the_method_page(): void
+    {
+        $this->withSession(['table_id' => $this->order->table_id])->get('/keranjang')->assertOk()
+            ->assertSee('Pilih metodenya di langkah berikutnya')
+            ->assertSee('E-Wallet &amp; QRIS', false)->assertSee('QRIS, GoPay, ShopeePay')
+            ->assertSee('Transfer Virtual Account')->assertSee('BCA, BNI, BRI, Permata, CIMB Niaga, Mandiri')
+            ->assertDontSee('Kamu memilih metodenya');
+    }
 }

@@ -135,18 +135,15 @@
                 {{-- Metode pembayaran: dipilih di halaman berikutnya, jadi di sini hanya informasi --}}
                 <section class="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
                     <h2 class="text-sm font-bold">Metode Pembayaran</h2>
-                    <p class="mt-1 text-xs text-gray-500">Kamu memilih metodenya di halaman berikutnya, setelah pesanan dibuat.</p>
+                    <p class="mt-1 text-xs text-gray-500">Pilih metodenya di langkah berikutnya, setelah pesanan dibuat.</p>
+                    {{-- Daftar diambil dari katalog yang sama dengan halaman Pilih Metode, jadi selalu sinkron. --}}
                     <ul class="mt-3 space-y-2 text-sm">
-                        @foreach ([
-                            ['QRIS', 'Scan dengan e-wallet atau mobile banking apa pun', 'qr'],
-                            ['GoPay', 'Buka aplikasi atau scan barcode', 'wallet'],
-                            ['Transfer Virtual Account', 'BCA, Mandiri, BRI, BNI', 'bank'],
-                        ] as [$name, $desc, $icon])
+                        @foreach (\App\Support\PaymentMethods::groups() as $group)
                             <li class="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2.5">
-                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><x-icon :name="$icon" class="h-5 w-5" /></span>
-                                <span>
-                                    <span class="block font-semibold">{{ $name }}</span>
-                                    <span class="block text-xs text-gray-500">{{ $desc }}</span>
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><x-icon :name="$group['icon']" class="h-5 w-5" /></span>
+                                <span class="min-w-0">
+                                    <span class="block font-semibold">{{ $group['label'] }}</span>
+                                    <span class="block text-xs text-gray-500">{{ collect($group['options'])->map(fn ($label) => trim(preg_replace('/\s*\(.*\)/', '', $label)))->join(', ') }}</span>
                                 </span>
                             </li>
                         @endforeach

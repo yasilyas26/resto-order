@@ -20,7 +20,7 @@
 @endphp
 
 @if ($file)
-    <img src="{{ asset("images/payments/{$name}.{$file}") }}" alt="" class="h-7 w-11 shrink-0 object-contain">
+    <img src="{{ asset("images/payments/{$name}.{$file}") }}" alt="" class="h-8 w-24 shrink-0 object-contain">
 @else
-    <span aria-hidden="true" class="flex h-7 w-11 shrink-0 items-center justify-center rounded-md px-0.5 text-[10px] font-extrabold leading-none tracking-tight" style="{{ $style }}">{{ $text }}</span>
+    <span aria-hidden="true" class="flex h-8 w-24 shrink-0 items-center justify-center rounded-md px-0.5 text-[10px] font-extrabold leading-none tracking-tight" style="{{ $style }}">{{ $text }}</span>
 @endif
