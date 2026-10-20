@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
 
@@ -74,6 +76,15 @@ class GoogleAuthController extends Controller
         if (! $user) {
             $user = new User(['name' => $google->getName() ?: $google->getEmail(), 'email' => $google->getEmail()]);
             // role tidak mass-assignable; defaultnya "customer".
+        }
+
+        // Akun hasil register yang emailnya belum terverifikasi bisa saja dibuat orang lain dengan email ini
+        // beserta password pilihannya. Google membuktikan pemilik email yang sebenarnya, jadi password lama
+        // dibuang dan semua sesi/remember-me lamanya ditutup sebelum akun ditautkan.
+        if ($user->exists && $user->email_verified_at === null) {
+            $user->password = null;
+            $user->setRememberToken(Str::random(60));
+            DB::table('sessions')->where('user_id', $user->id)->delete();
         }
 
         // Email yang sama dengan akun hasil register: akun ditautkan (google_id diisi), bukan dibuat ganda.

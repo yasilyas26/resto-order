@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
@@ -63,6 +64,36 @@ class GoogleLoginTest extends TestCase
         $this->assertNull($user->password, 'akun Google tidak punya password');
         $this->assertNotNull($user->email_verified_at);
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_linking_an_unverified_account_wipes_the_squatters_password_and_sessions(): void
+    {
+        $squatted = User::factory()->unverified()->create(['email' => 'siti@gmail.test']);
+        DB::table('sessions')->insert([
+            'id' => 'sesi-penyerang', 'user_id' => $squatted->id, 'ip_address' => '1.2.3.4',
+            'user_agent' => 'x', 'payload' => '', 'last_activity' => time(),
+        ]);
+        $this->googleReturns('g-9', 'siti@gmail.test');
+
+        $this->get('/auth/google/callback');
+
+        $squatted->refresh();
+        $this->assertNull($squatted->password, 'password buatan pendaftar palsu harus hilang');
+        $this->assertSame('g-9', $squatted->google_id);
+        $this->assertNotNull($squatted->email_verified_at);
+        $this->assertDatabaseMissing('sessions', ['id' => 'sesi-penyerang']);
+        $this->assertAuthenticatedAs($squatted);
+    }
+
+    public function test_linking_a_verified_account_keeps_its_password(): void
+    {
+        $existing = User::factory()->create(['email' => 'siti@gmail.test']);
+        $hash = $existing->password;
+        $this->googleReturns('g-10', 'siti@gmail.test');
+
+        $this->get('/auth/google/callback');
+
+        $this->assertSame($hash, $existing->refresh()->password);
     }
 
     public function test_an_existing_account_with_the_same_email_is_linked_not_duplicated(): void

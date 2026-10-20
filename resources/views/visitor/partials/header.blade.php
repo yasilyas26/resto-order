@@ -47,17 +47,40 @@
             @endif
 
             @if ($user)
-                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 rounded-full py-1 pl-1 pr-1 hover:bg-gray-100 sm:pr-3">
+                {{-- HP: langsung ke profil (menu lengkap ada di drawer). --}}
+                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 rounded-full py-1 pl-1 pr-1 hover:bg-gray-100 md:hidden" aria-label="Profil">
                     <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">{{ $initials }}</span>
-                    <span class="hidden text-left leading-tight sm:block">
-                        <span class="block text-sm font-semibold">{{ \Illuminate\Support\Str::limit($user->name, 16) }}</span>
-                        <span class="block text-xs text-gray-500">{{ match ($user->role) {
-                            \App\Enums\Role::Admin => 'Admin',
-                            \App\Enums\Role::Staff => 'Karyawan',
-                            default => 'Pelanggan',
-                        } }}</span>
-                    </span>
                 </a>
+
+                {{-- Desktop: klik avatar membuka pilihan Profil dan Keluar. --}}
+                <div x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false" class="relative hidden md:block">
+                    <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="menu"
+                        class="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 hover:bg-gray-100">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">{{ $initials }}</span>
+                        <span class="text-left leading-tight">
+                            <span class="block text-sm font-semibold">{{ \Illuminate\Support\Str::limit($user->name, 16) }}</span>
+                            <span class="block text-xs text-gray-500">{{ match ($user->role) {
+                                \App\Enums\Role::Admin => 'Admin',
+                                \App\Enums\Role::Staff => 'Karyawan',
+                                default => 'Pelanggan',
+                            } }}</span>
+                        </span>
+                    </button>
+
+                    <div x-cloak x-show="open" x-transition.opacity.duration.150ms role="menu"
+                        class="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white p-1.5 shadow-lg">
+                        <a href="{{ route('profile.edit') }}" role="menuitem"
+                            class="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                            <x-icon name="user" class="h-4 w-4 text-gray-400" /> Profil Saya
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button role="menuitem" class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-brand-700 hover:bg-brand-50">
+                                <x-icon name="logout" class="h-4 w-4" /> Keluar dari Akun
+                            </button>
+                        </form>
+                    </div>
+                </div>
             @else
                 <a href="{{ route('login') }}" class="whitespace-nowrap rounded-lg bg-brand-700 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-800 sm:px-4">
                     Masuk<span class="hidden sm:inline"> / Profil</span>
