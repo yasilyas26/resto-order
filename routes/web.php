@@ -41,9 +41,12 @@ Route::middleware(['visitor', 'table'])->group(function () {
     Route::get('/menu', [VisitorMenuController::class, 'index'])->name('menu');
     Route::get('/keranjang', [VisitorMenuController::class, 'cart'])->name('cart');
 
-    Route::get('/riwayat', [OrderHistoryController::class, 'index'])->name('riwayat');
-    Route::post('/riwayat/lookup', [OrderHistoryController::class, 'lookup'])->middleware('throttle:30,1')->name('riwayat.lookup');
-    Route::get('/riwayat/data', [OrderHistoryController::class, 'data'])->middleware('auth')->name('riwayat.data');
+    // Riwayat hanya untuk pelanggan yang login: tamu tidak punya riwayat (tamu dialihkan ke halaman login).
+    Route::middleware('auth')->group(function () {
+        Route::get('/riwayat', [OrderHistoryController::class, 'index'])->name('riwayat');
+        Route::post('/riwayat/lookup', [OrderHistoryController::class, 'lookup'])->middleware('throttle:30,1')->name('riwayat.lookup');
+        Route::get('/riwayat/data', [OrderHistoryController::class, 'data'])->name('riwayat.data');
+    });
 });
 
 // Checkout dan pembayaran. Total selalu dihitung ulang di server.

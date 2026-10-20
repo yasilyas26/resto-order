@@ -22,7 +22,7 @@ enum OrderStage: string
             self::Paid => 'Dibayar',
             self::Cooking => 'Sedang Dibuat',
             self::Done => 'Selesai',
-            self::Expired => 'Kedaluwarsa',
+            self::Expired => 'Dibatalkan',
             self::Failed => 'Pembayaran Gagal',
         };
     }
@@ -52,7 +52,7 @@ enum OrderStage: string
             self::Paid => 'Pembayaran diterima. Pesananmu sudah masuk antrean dapur.',
             self::Cooking => 'Pesananmu sedang dimasak di dapur. Pelayan akan mengantarkannya ke mejamu.',
             self::Done => 'Pesananmu sudah selesai. Selamat menikmati!',
-            self::Expired => 'Batas waktu pembayaran sudah lewat. Kamu masih bisa mencoba bayar lagi.',
+            self::Expired => 'Batas waktu pembayaran sudah lewat, jadi pesanan ini dibatalkan. Silakan pesan ulang.',
             self::Failed => 'Pembayaran tidak berhasil. Kamu bisa mencoba bayar lagi.',
         };
     }

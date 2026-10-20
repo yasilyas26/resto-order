@@ -46,11 +46,7 @@
                 <x-icon name="receipt" class="mx-auto h-12 w-12 text-brand-300" />
                 <h2 class="mt-3 text-lg font-bold">Belum ada pesanan</h2>
                 <p class="mt-1 text-sm text-gray-500">
-                    @if ($user)
-                        Pesanan yang kamu buat saat masuk dengan akunmu akan muncul di sini.
-                    @else
-                        Pesanan yang kamu buat dari perangkat ini akan muncul di sini.
-                    @endif
+                    Pesanan yang kamu buat saat masuk dengan akunmu akan muncul di sini.
                 </p>
                 <a href="{{ route('home') }}" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800">
                     Mulai Memesan <x-icon name="arrow-right" class="h-4 w-4" />
@@ -115,8 +111,8 @@
         </div>
 
         <aside class="space-y-6">
+            {{-- Profil pelanggan --}}
             @if ($user)
-                {{-- Profil pelanggan --}}
                 <section class="rounded-2xl bg-white p-6 shadow-sm">
                     <div class="text-center">
                         <span class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-100 text-2xl font-extrabold text-brand-700 ring-4 ring-brand-50">{{ $initials }}</span>
@@ -165,29 +161,6 @@
                             </button>
                         </form>
                     </div>
-                </section>
-            @else
-                {{-- Ajakan login untuk tamu --}}
-                <section class="rounded-2xl bg-white p-6 shadow-sm">
-                    <h2 class="text-lg font-bold">Simpan Riwayat Pesanan</h2>
-                    <p class="mt-2 text-sm text-gray-500">
-                        Riwayat tamu hanya tersimpan di perangkat ini. Masuk atau buat akun (bisa lewat Google) supaya
-                        pesananmu tercatat di semua perangkat.
-                    </p>
-                    <a href="{{ route('login') }}"
-                        class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-brand-700">
-                        Masuk atau Daftar <x-icon name="arrow-right" class="h-4 w-4" />
-                    </a>
-                    <p class="mt-3 text-xs text-gray-400">Pesanan yang dibuat sebelum login tidak dipindahkan ke akunmu.</p>
-                </section>
-
-                <section class="rounded-2xl bg-indigo-50 p-6">
-                    <h2 class="text-lg font-bold">Panduan Pesanan Tamu</h2>
-                    <ul class="mt-4 space-y-3 text-sm text-gray-600">
-                        <li class="flex gap-3"><x-icon name="clock" class="mt-0.5 h-4 w-4 shrink-0 text-brand-700" /> Status pesanan diperbarui otomatis selama halaman ini terbuka.</li>
-                        <li class="flex gap-3"><x-icon name="trash" class="mt-0.5 h-4 w-4 shrink-0 text-brand-700" /> Membersihkan riwayat browser atau cache akan menghapus daftar pesanan di perangkat ini.</li>
-                        <li class="flex gap-3"><x-icon name="info" class="mt-0.5 h-4 w-4 shrink-0 text-brand-700" /> Butuh bantuan kasir? Sebutkan kode pesananmu (contoh: ORD-7F3K9Q).</li>
-                    </ul>
                 </section>
             @endif
         </aside>

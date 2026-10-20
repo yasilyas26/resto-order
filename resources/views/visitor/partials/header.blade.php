@@ -4,6 +4,7 @@
         ? \Illuminate\Support\Str::of($user->name)->explode(' ')->filter()->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->join('')
         : null;
     $menuUrl = $currentTable ? route('menu') : route('home');
+    // Link Riwayat tampil untuk semua; tamu yang mengkliknya diarahkan ke login oleh middleware auth.
     $nav = [
         ['Menu Utama', $menuUrl, request()->routeIs('menu', 'cart', 'home')],
         ['Riwayat Pesanan', route('riwayat'), request()->routeIs('riwayat', 'order.show')],

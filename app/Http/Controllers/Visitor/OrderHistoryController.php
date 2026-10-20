@@ -13,20 +13,15 @@ class OrderHistoryController extends Controller
 {
     private const PER_PAGE = 10;
 
-    /**
-     * Pelanggan login: riwayat dari database. Tamu: daftar kode order yang disimpan di perangkatnya
-     * (localStorage) dicocokkan lewat lookup(). Order tamu sebelum login tidak diklaim ke akun (keputusan PRD).
-     */
+    /** Riwayat pelanggan yang login, dari database. Tamu tidak punya riwayat (route ini butuh login). */
     public function index(Request $request): View
     {
         $user = $request->user();
 
         return view('visitor.history', [
             'user' => $user,
-            'first' => $user ? $this->page($user->id, 1) : null,
-            'paidCount' => $user
-                ? Order::where('user_id', $user->id)->where('payment_status', PaymentStatus::Paid)->count()
-                : 0,
+            'first' => $this->page($user->id, 1),
+            'paidCount' => Order::where('user_id', $user->id)->where('payment_status', PaymentStatus::Paid)->count(),
         ]);
     }
 
@@ -38,17 +33,19 @@ class OrderHistoryController extends Controller
         return response()->json($this->page($request->user()->id, $page));
     }
 
-    /** Riwayat tamu: cocokkan kode order dari localStorage. Siapa pun yang tahu kodenya memang boleh melihat statusnya. */
+    /**
+     * Menyegarkan order yang sedang tampil di riwayat. Hanya order milik akun ini yang dikembalikan,
+     * kode order milik orang lain diabaikan. whereIn() memakai parameter, jadi aman dari injeksi.
+     */
     public function lookup(Request $request): JsonResponse
     {
-        // Kode yang bentuknya aneh (usang, localStorage rusak) tidak ditolak: dia sekadar tidak cocok dengan order mana pun,
-        // supaya satu kode buruk tidak membuat seluruh riwayat gagal dimuat. whereIn() memakai parameter, jadi aman dari injeksi.
         $data = $request->validate([
             'codes' => ['required', 'array', 'min:1', 'max:30'],
             'codes.*' => ['string', 'max:20'],
         ]);
 
         $orders = Order::with(['items.options', 'table'])
+            ->where('user_id', $request->user()->id)
             ->whereIn('code', $data['codes'])
             ->latest()
             ->latest('id')

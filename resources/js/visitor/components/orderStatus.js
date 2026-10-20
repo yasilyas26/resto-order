@@ -1,6 +1,5 @@
 import { getJson, postJson } from '../lib/http';
 import { formatClock, offsetFrom, secondsLeft } from '../lib/countdown';
-import { rememberOrder } from '../lib/storage';
 
 const POLL_MS = 5000; // keputusan proyek: polling ±5 detik, bukan WebSocket
 
@@ -23,8 +22,6 @@ export default function orderStatus({ code, table, statusUrl, recheckUrl, checko
 
         init() {
             setInterval(() => this.tick(), 1000);
-            // Order ini selalu masuk riwayat perangkat (juga kalau halamannya dibuka dari tautan).
-            rememberOrder(code);
             this.schedule();
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden) {

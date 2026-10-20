@@ -143,7 +143,8 @@ class PortalLoginTest extends TestCase
             $this->get($url)->assertOk()->assertDontSee('/portal', false);
         }
 
-        // Riwayat butuh meja yang sudah dipilih.
-        $this->withSession(['table_id' => $table->id])->get('/riwayat')->assertOk()->assertDontSee('/portal', false);
+        // Riwayat butuh login dan meja yang sudah dipilih.
+        $this->actingAs(\App\Models\User::factory()->create())
+            ->withSession(['table_id' => $table->id])->get('/riwayat')->assertOk()->assertDontSee('/portal', false);
     }
 }

@@ -40,8 +40,8 @@ class TransactionController extends Controller
 
         [$payLabel, $payTone] = match ($order->payment_status) {
             PaymentStatus::Paid => ['Lunas', 'green'],
-            PaymentStatus::Pending => $order->expires_at?->isPast() ? ['Kedaluwarsa', 'gray'] : ['Menunggu', 'amber'],
-            PaymentStatus::Expired => ['Kedaluwarsa', 'gray'],
+            PaymentStatus::Pending => $order->paymentDeadline()->isPast() ? ['Dibatalkan', 'gray'] : ['Menunggu', 'amber'],
+            PaymentStatus::Expired => ['Dibatalkan', 'gray'],
             PaymentStatus::Failed => ['Gagal', 'red'],
         };
 

@@ -81,7 +81,8 @@ class TableSelectionTest extends TestCase
 
     public function test_history_needs_a_selected_table_even_for_a_logged_in_customer(): void
     {
-        $this->get('/riwayat')->assertRedirect('/');
+        // Tamu tidak punya riwayat: langsung ke login, bukan ke pilih meja.
+        $this->get('/riwayat')->assertRedirect('/login');
 
         $this->actingAs(User::factory()->create());
         $this->get('/riwayat')->assertRedirect('/');
@@ -142,7 +143,7 @@ class TableSelectionTest extends TestCase
             $this->get('/'),
             $this->get('/login'),
             $this->get('/register'),
-            $this->withSession($withTable)->get('/riwayat'),
+            $this->actingAs(\App\Models\User::factory()->create())->withSession($withTable)->get('/riwayat'),
             $this->get('/order/'.$order->code),
             $this->withSession($withTable)->get('/menu'),
             $this->withSession($withTable)->get('/keranjang'),

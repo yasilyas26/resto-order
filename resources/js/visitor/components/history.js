@@ -1,53 +1,21 @@
 import { getJson, postJson } from '../lib/http';
-import { getOrderCodes } from '../lib/storage';
 
 const REFRESH_MS = 10000;
 
 /**
- * Daftar riwayat order.
- * - pelanggan login: halaman pertama datang dari server, sisanya lewat "Muat lebih banyak"
- * - tamu: kode order di perangkat dicocokkan ke server (lookup)
- * Order yang masih berjalan disegarkan otomatis.
+ * Daftar riwayat order pelanggan yang login: halaman pertama datang dari server, sisanya lewat
+ * "Muat lebih banyak". Order yang masih berjalan disegarkan otomatis.
  */
-export default function history({ lookupUrl, dataUrl, initial = null, nextPage = null }) {
-    const isUser = initial !== null;
-
+export default function history({ lookupUrl, dataUrl, initial = [], nextPage = null }) {
     return {
-        orders: initial ?? [],
+        orders: initial,
         nextPage,
-        loading: !isUser,
+        loading: false,
         loadingMore: false,
         _timer: null,
 
-        async init() {
-            if (!isUser) {
-                await this.loadGuest();
-            }
-
-            this.loading = false;
+        init() {
             this.scheduleRefresh();
-        },
-
-        async loadGuest() {
-            const codes = getOrderCodes();
-
-            if (!codes.length) {
-                this.orders = [];
-
-                return;
-            }
-
-            try {
-                const { ok, data } = await postJson(lookupUrl, { codes });
-
-                if (ok) {
-                    // Urutan mengikuti kode di perangkat (terbaru dulu), bukan urutan dari server.
-                    const byCode = new Map(data.orders.map((o) => [o.code, o]));
-                    this.orders = codes.map((c) => byCode.get(c)).filter(Boolean);
-                }
-            } catch {
-                // biarkan daftar kosong; pengunjung bisa memuat ulang halaman
-            }
         },
 
         async loadMore() {

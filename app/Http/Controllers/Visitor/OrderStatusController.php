@@ -44,7 +44,7 @@ class OrderStatusController extends Controller
     /** Halaman "Pilih Metode Pembayaran". Order yang sudah lunas langsung dialihkan ke halaman hasil. */
     public function checkout(Request $request, Order $order): View|RedirectResponse
     {
-        if ($order->isPaid()) {
+        if (! $order->canBePaid()) {
             return redirect()->route('order.result', $order);
         }
 

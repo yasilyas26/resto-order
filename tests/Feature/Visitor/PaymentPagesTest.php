@@ -114,14 +114,15 @@ class PaymentPagesTest extends TestCase
             ->assertSee('/order/ORD-ABCDEF/bayar', false)->assertDontSee('Pembayaran Berhasil');
     }
 
-    public function test_expired_page_offers_to_pay_again_both_for_the_status_and_for_a_lapsed_deadline(): void
+    public function test_expired_page_says_cancelled_and_offers_to_order_again_not_to_pay(): void
     {
         $this->setStatus(PaymentStatus::Expired);
-        $this->get('/order/ORD-ABCDEF/hasil')->assertOk()->assertSee('Waktu Pembayaran Habis')->assertSee('Bayar Lagi');
+        $this->get('/order/ORD-ABCDEF/hasil')->assertOk()->assertSee('Pesanan Dibatalkan')->assertSee('Kembali ke Beranda')
+            ->assertDontSee('Bayar Lagi')->assertDontSee('/order/ORD-ABCDEF/bayar', false);
 
         // Masih "pending" di database tapi batas bayar sudah lewat (webhook expire belum datang).
         $this->setStatus(PaymentStatus::Pending, ['expires_at' => now()->subMinute()]);
-        $this->get('/order/ORD-ABCDEF/hasil')->assertOk()->assertSee('Waktu Pembayaran Habis');
+        $this->get('/order/ORD-ABCDEF/hasil')->assertOk()->assertSee('Pesanan Dibatalkan');
     }
 
     public function test_waiting_page_polls_and_links_back_to_the_method_page(): void
@@ -152,17 +153,16 @@ class PaymentPagesTest extends TestCase
 
     // ---- Hitung mundur -----------------------------------------------------------
 
-    public function test_pressing_pay_after_the_deadline_starts_a_fresh_clock(): void
+    public function test_pressing_pay_after_the_deadline_is_refused(): void
     {
         config(['midtrans.expiry_minutes' => 5]);
         $this->order->forceFill(['expires_at' => null])->save();
         $this->postJson('/order/ORD-ABCDEF/bayar', ['method' => 'qris'])->assertOk();
 
         $this->travel(6)->minutes();
-        $this->setStatus(PaymentStatus::Expired);
-        $this->postJson('/order/ORD-ABCDEF/bayar', ['method' => 'qris'])->assertOk();
+        $this->postJson('/order/ORD-ABCDEF/bayar', ['method' => 'qris'])->assertStatus(409);
 
-        $this->assertEqualsWithDelta(5 * 60, now()->diffInSeconds($this->order->fresh()->expires_at, true), 3);
+        $this->assertSame(1, $this->order->payments()->count());
     }
 
     public function test_status_only_exposes_the_deadline_while_waiting(): void
@@ -487,6 +487,7 @@ class PaymentPagesTest extends TestCase
     public function test_customer_pages_have_a_footer_with_the_current_year_and_company_name(): void
     {
         $this->travelTo(now()->setYear(2031));
+        $this->order->update(['expires_at' => now()->addMinutes(15)]); // order lama (2026) sudah dibatalkan; halaman ini perlu order yang masih menunggu
 
         $this->get('/order/ORD-ABCDEF/hasil')->assertOk()->assertSee('&copy; 2031 PT. '.config('app.name').'. All Rights Reserved', false);
         $this->get('/order/ORD-ABCDEF/bayar')->assertOk()->assertSee('All Rights Reserved');
@@ -513,7 +514,8 @@ class PaymentPagesTest extends TestCase
 
     public function test_the_customer_history_page_has_a_loading_skeleton(): void
     {
-        $this->withSession(['table_id' => $this->order->table_id])->get('/riwayat')->assertOk()
+        $this->actingAs(\App\Models\User::factory()->create())
+            ->withSession(['table_id' => $this->order->table_id])->get('/riwayat')->assertOk()
             ->assertSee('Memuat riwayat')->assertSee('animate-pulse', false);
     }
 }

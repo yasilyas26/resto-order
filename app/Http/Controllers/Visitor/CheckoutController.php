@@ -83,6 +83,7 @@ class CheckoutController extends Controller
         return Order::where('code', $code)
             ->where('table_id', $table->id)
             ->where('payment_status', PaymentStatus::Pending)
+            ->where('created_at', '>', now()->subMinutes((int) config('midtrans.expiry_minutes'))) // yang sudah dibatalkan tidak dihidupkan lagi
             ->whereDoesntHave('payments')
             ->first();
     }
@@ -94,6 +95,10 @@ class CheckoutController extends Controller
 
         if ($order->isPaid()) {
             return response()->json(['message' => 'Pesanan ini sudah dibayar.', 'result_url' => route('order.result', $order)], 409);
+        }
+
+        if (! $order->canBePaid()) {
+            return $this->cancelled($order);
         }
 
         if (! $gateway->isConfigured()) {
@@ -114,6 +119,10 @@ class CheckoutController extends Controller
     {
         if ($order->isPaid()) {
             return response()->json(['message' => 'Pesanan ini sudah dibayar.'], 409);
+        }
+
+        if (! $order->canBePaid()) {
+            return $this->cancelled($order);
         }
 
         if (! $gateway->isConfigured()) {
@@ -170,6 +179,14 @@ class CheckoutController extends Controller
             'server_time' => now()->toIso8601String(),
             'snap_token' => $payment->snap_token,
         ], $status);
+    }
+
+    private function cancelled(Order $order): JsonResponse
+    {
+        return response()->json([
+            'message' => 'Batas waktu pembayaran sudah lewat, pesanan ini dibatalkan. Silakan pesan ulang.',
+            'result_url' => route('order.result', $order),
+        ], 409);
     }
 
     private function notConfigured(): JsonResponse

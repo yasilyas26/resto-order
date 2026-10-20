@@ -44,30 +44,46 @@ class OrderHistoryTest extends TestCase
 
     // ---- tamu -------------------------------------------------------------------
 
-    public function test_guest_history_page_renders_with_the_google_invitation(): void
-    {
-        $this->get('/riwayat')->assertOk()
-            ->assertSee('Riwayat Pesanan Anda')
-            ->assertSee('Masuk atau Daftar')
-            ->assertSee('Panduan Pesanan Tamu');
-    }
-
-    public function test_guest_lookup_returns_only_the_requested_codes(): void
+    public function test_guests_have_no_history_they_are_sent_to_login(): void
     {
         $this->makeOrder('ORD-AAAAAA');
-        $this->makeOrder('ORD-BBBBBB');
-        $this->makeOrder('ORD-CCCCCC');
 
-        $response = $this->postJson('/riwayat/lookup', ['codes' => ['ORD-AAAAAA', 'ORD-CCCCCC', 'ORD-ZZZZZZ']])->assertOk();
+        $this->get('/riwayat')->assertRedirect('/login');
+        $this->getJson('/riwayat/data')->assertUnauthorized();
+        $this->postJson('/riwayat/lookup', ['codes' => ['ORD-AAAAAA']])->assertUnauthorized();
+    }
 
-        $this->assertEqualsCanonicalizing(['ORD-AAAAAA', 'ORD-CCCCCC'], collect($response->json('orders'))->pluck('code')->all());
+    public function test_the_history_link_is_shown_to_everyone_and_sends_guests_to_login(): void
+    {
+        $this->get('/menu')->assertOk()->assertSee(route('riwayat'), false)->assertSee('Riwayat Pesanan');
+        $this->get(route('riwayat'))->assertRedirect('/login');
+
+        $this->actingAs(User::factory()->create())->get('/menu')->assertOk()->assertSee(route('riwayat'), false);
+    }
+
+    // ---- penyegaran order yang tampil (lookup) -----------------------------------
+
+    public function test_lookup_returns_only_the_requested_codes_that_belong_to_the_account(): void
+    {
+        $me = User::factory()->create();
+        $other = User::factory()->create();
+        $this->makeOrder('ORD-AAAAAA', $me);
+        $this->makeOrder('ORD-BBBBBB', $me);
+        $this->makeOrder('ORD-CCCCCC', $other);
+        $this->makeOrder('ORD-DDDDDD'); // order tamu
+
+        $response = $this->actingAs($me)
+            ->postJson('/riwayat/lookup', ['codes' => ['ORD-AAAAAA', 'ORD-CCCCCC', 'ORD-DDDDDD', 'ORD-ZZZZZZ']])->assertOk();
+
+        $this->assertSame(['ORD-AAAAAA'], collect($response->json('orders'))->pluck('code')->all());
     }
 
     public function test_lookup_summary_has_what_the_card_needs_but_no_personal_data(): void
     {
-        $this->makeOrder('ORD-AAAAAA', name: 'Budi Rahasia');
+        $me = User::factory()->create();
+        $this->makeOrder('ORD-AAAAAA', $me, name: 'Budi Rahasia');
 
-        $response = $this->postJson('/riwayat/lookup', ['codes' => ['ORD-AAAAAA']])->assertOk();
+        $response = $this->actingAs($me)->postJson('/riwayat/lookup', ['codes' => ['ORD-AAAAAA']])->assertOk();
 
         $order = $response->json('orders.0');
         $this->assertSame('ORD-AAAAAA', $order['code']);
@@ -83,18 +99,10 @@ class OrderHistoryTest extends TestCase
         $this->assertStringNotContainsString('rahasia@kontak.test', $raw);
     }
 
-    public function test_one_bad_code_does_not_break_the_rest_of_the_history(): void
-    {
-        $this->makeOrder('ORD-AAAAAA');
-
-        // Kode usang atau rusak di localStorage: diabaikan, order yang sah tetap muncul.
-        $response = $this->postJson('/riwayat/lookup', ['codes' => ['bukan-kode', 'ORD-AAAAAA', 'ORD-4M2P1X', "x' OR 1=1 --"]])->assertOk();
-
-        $this->assertSame(['ORD-AAAAAA'], collect($response->json('orders'))->pluck('code')->all());
-    }
-
     public function test_lookup_rejects_empty_oversized_or_non_text_input(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->postJson('/riwayat/lookup', ['codes' => []])->assertStatus(422);
         $this->postJson('/riwayat/lookup', [])->assertStatus(422);
         $this->postJson('/riwayat/lookup', ['codes' => 'ORD-AAAAAA'])->assertStatus(422);
@@ -107,16 +115,13 @@ class OrderHistoryTest extends TestCase
 
     public function test_lookup_is_rate_limited(): void
     {
+        $this->actingAs(User::factory()->create());
+
         for ($i = 0; $i < 30; $i++) {
             $this->postJson('/riwayat/lookup', ['codes' => ['ORD-AAAAAA']])->assertOk();
         }
 
         $this->postJson('/riwayat/lookup', ['codes' => ['ORD-AAAAAA']])->assertStatus(429);
-    }
-
-    public function test_guest_cannot_use_the_account_history_endpoint(): void
-    {
-        $this->getJson('/riwayat/data')->assertUnauthorized();
     }
 
     // ---- pelanggan --------------------------------------------------------------

@@ -104,10 +104,10 @@ class OrderStatusTest extends TestCase
         $stage()->assertJson(['stage' => 'done', 'step' => 4, 'label' => 'Selesai']);
     }
 
-    public function test_expired_and_failed_orders_are_outside_the_normal_flow_but_payable_again(): void
+    public function test_expired_and_failed_orders_are_outside_the_normal_flow_only_failed_can_be_paid_again(): void
     {
         $this->setStatus(PaymentStatus::Expired);
-        $this->getJson('/order/ORD-ABCDEF/status')->assertJson(['stage' => 'expired', 'step' => 0, 'payable' => true]);
+        $this->getJson('/order/ORD-ABCDEF/status')->assertJson(['stage' => 'expired', 'label' => 'Dibatalkan', 'step' => 0, 'payable' => false]);
 
         $this->setStatus(PaymentStatus::Failed);
         $this->getJson('/order/ORD-ABCDEF/status')->assertJson(['stage' => 'failed', 'step' => 0, 'payable' => true]);

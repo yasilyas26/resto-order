@@ -18,16 +18,6 @@ export function writeJson(key, value) {
     }
 }
 
-const ORDERS_KEY = 'resto.orders.v1';
-const MAX_REMEMBERED = 30;
-
-/** Kode order yang pernah dibuat dari perangkat ini (untuk riwayat tamu). */
-export function getOrderCodes() {
-    const codes = readJson(ORDERS_KEY, []);
-
-    return Array.isArray(codes) ? codes.filter((c) => typeof c === 'string') : [];
-}
-
 const DRAFT_KEY = 'resto.draftOrder.v1';
 
 /** Kode order yang sudah dibuat dari keranjang tapi belum dibayar (pembayarannya belum dimulai). */
@@ -47,10 +37,4 @@ export function clearDraftOrder() {
     } catch {
         // abaikan
     }
-}
-
-export function rememberOrder(code) {
-    const codes = [code, ...getOrderCodes().filter((c) => c !== code)].slice(0, MAX_REMEMBERED);
-
-    writeJson(ORDERS_KEY, codes);
 }

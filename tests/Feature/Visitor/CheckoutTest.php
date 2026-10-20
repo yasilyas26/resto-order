@@ -3,6 +3,7 @@
 namespace Tests\Feature\Visitor;
 
 use App\Enums\KitchenStatus;
+use App\Enums\OrderStage;
 use App\Enums\OrderType;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
@@ -302,7 +303,7 @@ class CheckoutTest extends TestCase
         $this->assertDatabaseCount('payments', 1);
     }
 
-    public function test_after_the_attempt_expires_a_new_attempt_gets_a_new_unique_midtrans_id(): void
+    public function test_after_the_deadline_the_order_is_cancelled_and_cannot_be_paid_again(): void
     {
         $this->checkout()->assertCreated();
         $order = Order::firstOrFail();
@@ -312,10 +313,38 @@ class CheckoutTest extends TestCase
         $order->expires_at = now()->subMinute();
         $order->save();
 
-        $this->postJson("/order/{$order->code}/bayar")->assertOk();
+        $this->postJson("/order/{$order->code}/bayar")->assertStatus(409)->assertJsonStructure(['message', 'result_url']);
+        $this->postJson("/order/{$order->code}/ganti-metode")->assertStatus(409);
 
-        $this->assertSame([$order->code.'-1', $order->code.'-2'], Payment::orderBy('id')->pluck('midtrans_order_id')->all());
-        $this->assertSame(PaymentStatus::Pending, $order->fresh()->payment_status, 'order kembali menunggu pembayaran');
+        $this->assertSame([$order->code.'-1'], Payment::pluck('midtrans_order_id')->all(), 'tidak ada percobaan baru');
+        $this->assertSame(PaymentStatus::Expired, $order->fresh()->payment_status);
+    }
+
+    public function test_an_order_nobody_ever_paid_is_cancelled_after_the_payment_window(): void
+    {
+        config(['midtrans.expiry_minutes' => 15]);
+        $this->checkout()->assertCreated();
+        $order = Order::firstOrFail();
+        $this->assertNull($order->expires_at, 'pelanggan belum menekan Bayar');
+        $this->assertSame(OrderStage::Waiting, $order->stage());
+
+        $this->travel(16)->minutes();
+
+        $this->assertSame(OrderStage::Expired, $order->fresh()->stage());
+        $this->postJson("/order/{$order->code}/bayar")->assertStatus(409);
+        $this->get("/order/{$order->code}/bayar")->assertRedirect(route('order.result', $order));
+    }
+
+    public function test_a_cancelled_draft_is_not_revived_by_checking_out_again(): void
+    {
+        config(['midtrans.expiry_minutes' => 15]);
+        $this->checkout()->assertCreated();
+        $old = Order::firstOrFail();
+
+        $this->travel(16)->minutes();
+        $this->checkout(['draft' => $old->code])->assertCreated();
+
+        $this->assertSame(2, Order::count(), 'order baru, bukan menimpa yang sudah dibatalkan');
     }
 
     public function test_a_failed_token_request_can_be_retried_from_the_status_page(): void

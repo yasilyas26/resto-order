@@ -13,7 +13,7 @@
         'success' => ['icon' => 'check', 'ring' => 'bg-emerald-100 text-emerald-600', 'title' => 'Pembayaran Berhasil', 'text' => 'Terima kasih! Pesananmu sudah masuk antrean dapur dan akan segera diantar ke mejamu.'],
         'waiting' => ['icon' => 'clock', 'ring' => 'bg-amber-100 text-amber-600', 'title' => 'Menunggu Konfirmasi Pembayaran', 'text' => 'Kami sedang memeriksa pembayaranmu. Halaman ini akan berubah otomatis begitu pembayaran terkonfirmasi.'],
         'failed' => ['icon' => 'x', 'ring' => 'bg-red-100 text-red-600', 'title' => 'Pembayaran Gagal', 'text' => 'Pembayaranmu tidak berhasil dan tidak ada dana yang terpotong dari pesanan ini. Kamu bisa mencoba lagi dengan metode yang sama atau yang lain.'],
-        'expired' => ['icon' => 'clock', 'ring' => 'bg-gray-200 text-gray-600', 'title' => 'Waktu Pembayaran Habis', 'text' => 'Batas waktu pembayaran sudah lewat, jadi pesanan ini belum dikirim ke dapur. Pesananmu masih tersimpan: bayar lagi untuk melanjutkan.'],
+        'expired' => ['icon' => 'clock', 'ring' => 'bg-gray-200 text-gray-600', 'title' => 'Pesanan Dibatalkan', 'text' => 'Batas waktu pembayaran sudah lewat, jadi pesanan ini dibatalkan dan tidak dikirim ke dapur. Silakan pesan ulang.'],
     ][$state];
     $rp = fn (int $n) => 'Rp '.number_format($n, 0, ',', '.');
 @endphp
@@ -134,10 +134,12 @@
                             class="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-brand-600 bg-brand-50 px-4 py-3.5 text-center font-bold text-brand-700 hover:bg-brand-100">
                             <x-icon name="refresh" class="h-5 w-5" /> Ganti Metode Pembayaran
                         </a>
-                    @else
-                        <a href="{{ route('order.checkout', $order) }}" class="rounded-xl bg-brand-600 px-4 py-3.5 text-center font-bold text-white shadow-sm hover:bg-brand-700">
-                            {{ ['failed' => 'Coba Bayar Lagi', 'expired' => 'Bayar Lagi'][$state] }}
+                    @elseif ($state === 'expired')
+                        <a href="{{ $canOrderMore ? route('menu') : route('home') }}" class="rounded-xl bg-brand-600 px-4 py-3.5 text-center font-bold text-white shadow-sm hover:bg-brand-700">
+                            {{ $canOrderMore ? 'Pesan Ulang' : 'Kembali ke Beranda' }}
                         </a>
+                    @else
+                        <a href="{{ route('order.checkout', $order) }}" class="rounded-xl bg-brand-600 px-4 py-3.5 text-center font-bold text-white shadow-sm hover:bg-brand-700">Coba Bayar Lagi</a>
                     @endif
                     <a href="{{ route('order.show', $order) }}" class="rounded-xl border border-gray-300 px-4 py-3.5 text-center font-semibold text-gray-700 hover:bg-gray-50">Lihat Status Pesanan</a>
                 @endif

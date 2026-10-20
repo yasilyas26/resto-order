@@ -126,16 +126,26 @@ class Order extends Model
             },
             $this->payment_status === PaymentStatus::Failed => OrderStage::Failed,
             $this->payment_status === PaymentStatus::Expired => OrderStage::Expired,
-            // Masih pending di database tapi batas bayar sudah lewat (webhook "expire" belum sempat datang).
-            $this->expires_at !== null && $this->expires_at->isPast() => OrderStage::Expired,
+            // Masih pending di database tapi batas bayar sudah lewat (webhook "expire" belum sempat datang,
+            // atau pelanggan tidak pernah menekan Bayar).
+            $this->paymentDeadline()->isPast() => OrderStage::Expired,
             default => OrderStage::Waiting,
         };
     }
 
-    /** Pengunjung boleh mencoba bayar selama order belum lunas. */
+    /**
+     * Batas akhir bayar. Hitung mundur resmi mulai saat pelanggan menekan Bayar (expires_at); order yang tidak
+     * pernah sampai ke sana tidak boleh menggantung selamanya, jadi batasnya dihitung dari waktu order dibuat.
+     */
+    public function paymentDeadline(): \Illuminate\Support\Carbon
+    {
+        return $this->expires_at ?? $this->created_at->copy()->addMinutes((int) config('midtrans.expiry_minutes'));
+    }
+
+    /** Pengunjung boleh mencoba bayar selama order belum lunas dan belum dibatalkan karena lewat batas waktu. */
     public function canBePaid(): bool
     {
-        return ! $this->isPaid();
+        return ! $this->isPaid() && $this->stage() !== OrderStage::Expired;
     }
 
     /** Status untuk halaman status dan polling. Tidak memuat data pelanggan. */
