@@ -48,7 +48,6 @@ class TableController extends Controller
 
         $total = Table::count();
         $active = Table::where('is_active', true)->count();
-        $occupied = Table::where('is_active', true)->whereIn('id', $occupiedIds)->count();
 
         return view('admin.tables.index', [
             'tables' => $tables,
@@ -60,8 +59,6 @@ class TableController extends Controller
                 'total' => $total,
                 'active' => $active,
                 'inactive' => $total - $active,
-                'occupied' => $occupied,
-                'percent' => $active > 0 ? (int) round($occupied / $active * 100) : 0,
             ],
         ]);
     }

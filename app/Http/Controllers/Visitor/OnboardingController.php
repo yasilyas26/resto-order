@@ -31,7 +31,7 @@ class OnboardingController extends Controller
     {
         $request->session()->forget('table_id');
 
-        return redirect()->route('home');
+        return redirect()->route('home')->withCookie(cookie()->forget('table_id'));
     }
 
     private function select(?Table $table): RedirectResponse
@@ -43,6 +43,7 @@ class OnboardingController extends Controller
 
         session(['table_id' => $table->id]);
 
-        return redirect()->route('menu');
+        // Cadangan 6 jam kalau sesi hilang (mis. saat login). Dicek aktif tiap request lewat Table::fromSession().
+        return redirect()->route('menu')->withCookie(cookie('table_id', (string) $table->id, 360));
     }
 }

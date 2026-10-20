@@ -3,8 +3,8 @@
 @endphp
 
 <x-admin-layout title="Manajemen Meja" subtitle="Atur meja makan, buat ulang kode unik, dan cetak QR meja.">
-    {{-- Tiga angka ringkas --}}
-    <div class="grid gap-4 md:grid-cols-3">
+    {{-- Dua angka ringkas --}}
+    <div class="grid gap-4 md:grid-cols-2">
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div class="flex items-center justify-between text-sm text-gray-700">Total Meja Resto <x-icon name="qr" class="h-5 w-5 text-gray-500" /></div>
             <div class="mt-3 text-4xl font-extrabold tracking-tight">{{ $stats['total'] }} <span class="text-lg font-medium text-gray-600">Meja</span></div>
@@ -13,16 +13,6 @@
             <div class="text-sm text-gray-700">Meja Siap Digunakan</div>
             <div class="mt-3 text-4xl font-extrabold tracking-tight">{{ $stats['active'] }} <span class="text-lg font-medium text-gray-600">Meja Aktif</span></div>
             <div class="mt-1 text-xs text-gray-500">{{ $stats['inactive'] }} meja nonaktif</div>
-        </div>
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between text-sm text-gray-700">
-                Status Okupansi Meja
-                <span class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-brand-700">{{ $stats['percent'] }}% Okupansi</span>
-            </div>
-            <div class="mt-3 text-4xl font-extrabold tracking-tight">{{ $stats['occupied'] }} <span class="text-lg font-medium text-gray-600">Meja Terisi</span></div>
-            <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
-                <div class="h-full rounded-full bg-brand-600" style="width: {{ $stats['percent'] }}%"></div>
-            </div>
         </div>
     </div>
 

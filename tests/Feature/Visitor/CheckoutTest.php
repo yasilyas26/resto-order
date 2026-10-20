@@ -203,6 +203,17 @@ class CheckoutTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
+    public function test_checkout_is_refused_when_the_table_was_deactivated_after_choosing_it(): void
+    {
+        $this->f['table']->update(['is_active' => false]);
+
+        $this->checkout()
+            ->assertStatus(409)
+            ->assertJsonPath('redirect', route('home'));
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
     public function test_too_many_choices_in_a_group_are_rejected(): void
     {
         $this->checkout(['items' => [['menu_id' => $this->f['mie']->id, 'qty' => 1, 'options' => [$this->f['lv0']->id, $this->f['lv3']->id]]]])

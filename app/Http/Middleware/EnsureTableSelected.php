@@ -27,7 +27,9 @@ class EnsureTableSelected
                 ], 409);
             }
 
-            return redirect()->route('home')->with('error', 'Pilih meja dulu untuk mulai memesan.');
+            return redirect()->route('home')
+                ->with('error', 'Pilih meja dulu untuk mulai memesan.')
+                ->withCookie(cookie()->forget('table_id'));
         }
 
         $request->attributes->set('table', $table);

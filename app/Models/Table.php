@@ -56,7 +56,20 @@ class Table extends Model
     {
         $id = session('table_id');
 
-        return $id ? static::where('is_active', true)->find($id) : null;
+        // Sesi bisa ganti/kosong (misalnya saat login); cookie "table_id" jadi cadangan.
+        $fromCookie = false;
+        if (! $id) {
+            $id = request()->cookie('table_id');
+            $fromCookie = (bool) $id;
+        }
+
+        $table = $id ? static::where('is_active', true)->find($id) : null;
+
+        if ($table && $fromCookie) {
+            session(['table_id' => $table->id]);
+        }
+
+        return $table;
     }
 
     /** Cari meja aktif dari kode di stiker/QR. Meja nonaktif atau terhapus dianggap tidak ada. */

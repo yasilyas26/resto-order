@@ -156,15 +156,26 @@ class TableSelectionTest extends TestCase
         }
     }
 
-    public function test_a_logged_in_admin_also_sees_no_admin_link_on_visitor_pages(): void
+    public function test_table_is_restored_from_cookie_when_session_is_empty(): void
     {
         $f = $this->menuFixture();
-        $this->actingAs(User::factory()->admin()->create());
 
-        $html = $this->withSession(['table_id' => $f['table']->id])->get('/menu')->getContent();
+        // Cookie aplikasi terenkripsi; di test kita enkripsi manual seperti yang dikirim browser.
+        $value = \Illuminate\Cookie\CookieValuePrefix::create('table_id', app('encrypter')->getKey()).$f['table']->id;
+        $this->withUnencryptedCookie('table_id', app('encrypter')->encrypt($value, false))->get('/menu')->assertOk();
+    }
 
-        $this->assertStringNotContainsString('/admin', $html);
-        $this->assertStringNotContainsString('/staff', $html);
+    public function test_admin_and_staff_are_sent_back_to_their_area_from_visitor_pages(): void
+    {
+        $f = $this->menuFixture();
+
+        foreach ([[User::factory()->admin()->create(), '/admin'], [User::factory()->staff()->create(), '/staff/orders']] as [$user, $home]) {
+            $this->actingAs($user);
+
+            foreach (['/', '/menu', '/keranjang', '/riwayat', '/ganti-meja'] as $page) {
+                $this->withSession(['table_id' => $f['table']->id])->get($page)->assertRedirect($home);
+            }
+        }
     }
 
     public function test_qr_url_generated_for_a_table_matches_the_scan_route(): void

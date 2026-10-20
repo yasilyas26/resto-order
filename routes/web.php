@@ -28,13 +28,16 @@ use Illuminate\Support\Facades\Route;
 // ---------------------------------------------------------------------------
 
 // Pilih meja: hanya lewat scan QR (/m/{kode}). Dibatasi supaya kode tidak bisa ditebak-tebak.
-Route::get('/', [OnboardingController::class, 'index'])->name('home');
-Route::get('/m/{code}', [OnboardingController::class, 'scan'])->middleware('throttle:table-code')->name('table.scan');
-Route::get('/ganti-meja', [OnboardingController::class, 'change'])->name('table.change');
+// Karyawan/admin yang membuka halaman ini dikembalikan ke area kerjanya (middleware 'visitor').
+Route::middleware('visitor')->group(function () {
+    Route::get('/', [OnboardingController::class, 'index'])->name('home');
+    Route::get('/m/{code}', [OnboardingController::class, 'scan'])->middleware('throttle:table-code')->name('table.scan');
+    Route::get('/ganti-meja', [OnboardingController::class, 'change'])->name('table.change');
+});
 
 // Memesan dan melihat riwayat: butuh meja yang sudah dipilih (scan QR atau kode manual) dan masih aktif.
 // Berlaku juga untuk pelanggan yang sudah login: tanpa meja, mereka diarahkan ke halaman pilih meja.
-Route::middleware('table')->group(function () {
+Route::middleware(['visitor', 'table'])->group(function () {
     Route::get('/menu', [VisitorMenuController::class, 'index'])->name('menu');
     Route::get('/keranjang', [VisitorMenuController::class, 'cart'])->name('cart');
 

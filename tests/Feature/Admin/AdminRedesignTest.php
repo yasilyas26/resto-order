@@ -164,19 +164,16 @@ class AdminRedesignTest extends TestCase
 
     // ---- Manajemen Meja ----------------------------------------------------------
 
-    public function test_table_occupancy_counts_active_tables_with_unfinished_paid_dine_in_orders(): void
+    public function test_table_stats_count_total_active_and_inactive_tables(): void
     {
-        $free = Table::create(['number' => 'F9']);
+        Table::create(['number' => 'F9']);
         Table::create(['number' => 'X1', 'is_active' => false]);
-        $this->paidOrder($this->f); // meja fixture: terisi
-        $this->paidOrder($this->f, ['table_id' => $free->id, 'kitchen_status' => KitchenStatus::Done, 'completed_at' => now()->subHours(2)]);
 
-        $stats = $this->get('/admin/tables')->assertOk()->viewData('stats');
+        $stats = $this->get('/admin/tables')->assertOk()->assertDontSee('Status Okupansi Meja')->viewData('stats');
 
         $this->assertSame(3, $stats['total']);
         $this->assertSame(2, $stats['active']);
-        $this->assertSame(1, $stats['occupied']);
-        $this->assertSame(50, $stats['percent']);
+        $this->assertSame(1, $stats['inactive']);
     }
 
     public function test_table_search_matches_number_or_code(): void
