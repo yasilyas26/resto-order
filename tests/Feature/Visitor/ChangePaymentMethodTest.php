@@ -41,6 +41,7 @@ class ChangePaymentMethodTest extends TestCase
         $this->first = $this->order->payments()->create([
             'midtrans_order_id' => 'ORD-ABCDEF-1', 'gross_amount' => 9500, 'snap_token' => 'token-lama',
         ]);
+        $this->withSession(['my_orders' => ['ORD-ABCDEF']]); // browser ini pemilik order
     }
 
     private function change()

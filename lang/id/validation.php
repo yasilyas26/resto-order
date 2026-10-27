@@ -116,7 +116,7 @@ return [
         'mixed'         => 'Gunakan kombinasi huruf besar dan huruf kecil.',
         'numbers'       => 'Tambahkan minimal satu angka.',
         'symbols'       => 'Tambahkan minimal satu simbol, misalnya ! atau @.',
-        'uncompromised' => 'Kata sandi ini terlalu umum dan pernah bocor di internet, jadi kurang aman. Coba kombinasi lain yang lebih unik.',
+        'uncompromised' => 'Kata sandi ini pernah bocor di internet. Pakai yang lain.',
     ],
     'present'                => ':Attribute wajib ada.',
     'present_if'             => 'Bidang :attribute harus ada ketika :other adalah :value.',

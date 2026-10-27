@@ -32,7 +32,7 @@ class OrderWorkflowTest extends TestCase
         $this->f = $this->menuFixture();
         $this->staff = User::factory()->staff()->create();
         $this->order = $this->paidOrder($this->f);
-        $this->actingAs($this->staff);
+        $this->actingAs($this->staff)->withSession(['my_orders' => [$this->order->code]]);
     }
 
     private function mie(): \App\Models\OrderItem

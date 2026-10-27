@@ -22,7 +22,8 @@ class GoogleAuthController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Login dengan Google belum disiapkan.']);
         }
 
-        return Socialite::driver('google')->redirect();
+        // Selalu tanya akun mana: sesi Google di browser tidak ikut hilang saat logout dari sini.
+        return Socialite::driver('google')->with(['prompt' => 'select_account'])->redirect();
     }
 
     /**

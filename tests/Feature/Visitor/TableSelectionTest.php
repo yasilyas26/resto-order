@@ -137,7 +137,7 @@ class TableSelectionTest extends TestCase
             'code' => 'ORD-AAAAAA', 'table_id' => $f['table']->id, 'customer_name' => 'Budi',
             'order_type' => 'dine_in', 'subtotal' => 5000, 'total' => 5000,
         ]);
-        $withTable = ['table_id' => $f['table']->id];
+        $withTable = ['table_id' => $f['table']->id, 'my_orders' => [$order->code]];
 
         $pages = [
             $this->get('/'),

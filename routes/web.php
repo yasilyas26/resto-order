@@ -51,18 +51,23 @@ Route::middleware(['visitor', 'table'])->group(function () {
 
 // Checkout dan pembayaran. Total selalu dihitung ulang di server.
 Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:checkout')->name('checkout.store');
-Route::post('/order/{order}/bayar', [CheckoutController::class, 'pay'])->middleware('throttle:checkout')->name('order.pay');
-Route::post('/order/{order}/ganti-metode', [CheckoutController::class, 'changeMethod'])->middleware('throttle:checkout')->name('order.change-method');
-
-// Status order, terbuka untuk yang tahu kode ordernya.
+// Tujuan balik dari Midtrans: hanya mengalihkan, keamanannya dicek di halaman tujuan.
 // Harus di atas /order/{order}, kalau tidak "selesai" dianggap kode order.
 Route::get('/order/selesai', [OrderStatusController::class, 'finish'])->name('order.finish');
-Route::get('/order/{order}', [OrderStatusController::class, 'show'])->name('order.show');
-Route::get('/order/{order}/bayar', [OrderStatusController::class, 'checkout'])->name('order.checkout');
-Route::get('/order/{order}/qr', PaymentQrController::class)->middleware('throttle:30,1')->name('order.qr');
-Route::get('/order/{order}/hasil', [OrderStatusController::class, 'result'])->name('order.result');
-Route::get('/order/{order}/status', [OrderStatusController::class, 'status'])->middleware('throttle:60,1')->name('order.status');
-Route::post('/order/{order}/cek-pembayaran', [OrderStatusController::class, 'recheck'])->middleware('throttle:10,1')->name('order.recheck');
+
+// Halaman dan aksi order hanya untuk pemiliknya (browser yang membuat order, atau akun yang sama).
+// Tahu kode order saja tidak cukup: URL yang disalin ke browser lain ditolak.
+Route::middleware('order.owner')->group(function () {
+    Route::post('/order/{order}/bayar', [CheckoutController::class, 'pay'])->middleware('throttle:checkout')->name('order.pay');
+    Route::post('/order/{order}/ganti-metode', [CheckoutController::class, 'changeMethod'])->middleware('throttle:checkout')->name('order.change-method');
+
+    Route::get('/order/{order}', [OrderStatusController::class, 'show'])->name('order.show');
+    Route::get('/order/{order}/bayar', [OrderStatusController::class, 'checkout'])->name('order.checkout');
+    Route::get('/order/{order}/qr', PaymentQrController::class)->middleware('throttle:30,1')->name('order.qr');
+    Route::get('/order/{order}/hasil', [OrderStatusController::class, 'result'])->name('order.result');
+    Route::get('/order/{order}/status', [OrderStatusController::class, 'status'])->middleware('throttle:60,1')->name('order.status');
+    Route::post('/order/{order}/cek-pembayaran', [OrderStatusController::class, 'recheck'])->middleware('throttle:10,1')->name('order.recheck');
+});
 
 // Webhook Midtrans: satu-satunya jalur yang menetapkan order lunas (tanpa CSRF, diamankan signature).
 Route::post('/payments/midtrans/notification', MidtransNotificationController::class)->name('payments.midtrans.notification');

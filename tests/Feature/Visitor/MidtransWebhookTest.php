@@ -38,6 +38,7 @@ class MidtransWebhookTest extends TestCase
         $this->payment = $this->order->payments()->create([
             'midtrans_order_id' => 'ORD-ABCDEF-1', 'gross_amount' => 43000, 'snap_token' => 'tok',
         ]);
+        $this->withSession(['my_orders' => ['ORD-ABCDEF']]); // browser ini pemilik order
     }
 
     /** Notifikasi seperti yang dikirim Midtrans, lengkap dengan signature_key yang benar. */

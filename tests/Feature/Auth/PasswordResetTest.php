@@ -70,4 +70,53 @@ class PasswordResetTest extends TestCase
             return true;
         });
     }
+
+    private function resetWith(string $token, string $email): \Illuminate\Testing\TestResponse
+    {
+        return $this->post('/reset-password', [
+            'token' => $token,
+            'email' => $email,
+            'password' => 'KopiSusu2026x',
+            'password_confirmation' => 'KopiSusu2026x',
+        ]);
+    }
+
+    public function test_the_reset_link_expires_after_15_minutes(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+        $this->post('/forgot-password', ['email' => $user->email]);
+
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            $this->travel(14)->minutes();
+            $this->resetWith($notification->token, $user->email)->assertSessionHasNoErrors();
+
+            return true;
+        });
+
+        $this->travelBack();
+        Notification::fake();
+        $this->post('/forgot-password', ['email' => $user->email]);
+
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            $this->travel(16)->minutes();
+            $this->resetWith($notification->token, $user->email)->assertSessionHasErrors('email');
+
+            return true;
+        });
+    }
+
+    public function test_the_reset_link_works_only_once(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+        $this->post('/forgot-password', ['email' => $user->email]);
+
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            $this->resetWith($notification->token, $user->email)->assertSessionHasNoErrors();
+            $this->resetWith($notification->token, $user->email)->assertSessionHasErrors('email');
+
+            return true;
+        });
+    }
 }

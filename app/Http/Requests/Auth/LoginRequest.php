@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\Role;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -42,7 +43,19 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $loggedIn = Auth::attempt($this->only('email', 'password'), $this->boolean('remember'));
+
+        // /login hanya untuk pelanggan. Admin dan karyawan masuk lewat /portal; di sini mereka diperlakukan sama
+        // dengan password salah (pesan sama, ikut dihitung sebagai kegagalan) supaya akun internal tidak bisa
+        // ditebak atau dicoba-coba dari halaman publik.
+        if ($loggedIn && Auth::user()->role !== Role::Customer) {
+            Auth::guard('web')->logout();
+            $this->session()->invalidate();
+            $this->session()->regenerateToken();
+            $loggedIn = false;
+        }
+
+        if (! $loggedIn) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

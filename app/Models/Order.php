@@ -12,6 +12,7 @@ use App\Support\PaymentLabel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\Request;
 
 /**
  * Order tidak punya soft delete dan tidak pernah dihapus: ini catatan keuangan.
@@ -67,6 +68,28 @@ class Order extends Model
     public function getRouteKeyName(): string
     {
         return 'code';
+    }
+
+    /** Catat order ini sebagai milik browser yang sedang dipakai (dicek middleware EnsureOrderOwner). */
+    public function rememberIn(Request $request): void
+    {
+        $codes = $request->session()->get('my_orders', []);
+        $codes[] = $this->code;
+
+        // Dibatasi supaya session tidak membengkak.
+        $request->session()->put('my_orders', array_slice(array_unique($codes), -50));
+    }
+
+    /** Pemilik: browser yang membuat order ini, atau akun pelanggan yang sama. */
+    public function isOwnedBy(Request $request): bool
+    {
+        $user = $request->user();
+
+        if ($user && $this->user_id !== null && $this->user_id === $user->id) {
+            return true;
+        }
+
+        return in_array($this->code, $request->session()->get('my_orders', []), true);
     }
 
     public function table(): BelongsTo

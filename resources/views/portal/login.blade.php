@@ -46,7 +46,7 @@
 
                 <label class="flex items-center gap-2.5 text-sm text-gray-700">
                     <input type="checkbox" name="remember" value="1" checked class="rounded border-gray-300 text-brand-600 focus:ring-brand-300">
-                    Ingat sesi di perangkat terminal ini
+                    Tetap masuk di perangkat ini
                 </label>
 
                 <button type="submit"
@@ -57,10 +57,6 @@
 
             <div class="mt-6 border-t border-gray-100 pt-5 text-center">
                 <p class="text-xs font-semibold text-brand-700">Lupa Kata Sandi? Hubungi Supervisor</p>
-                <a href="{{ route('home') }}"
-                    class="mt-4 flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100">
-                    <x-icon name="utensils" class="h-4 w-4" /> Menuju Pemesanan Pelanggan (Mode Meja)
-                </a>
             </div>
         </div>
     </main>

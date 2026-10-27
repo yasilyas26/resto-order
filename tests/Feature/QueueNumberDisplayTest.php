@@ -60,6 +60,7 @@ class QueueNumberDisplayTest extends TestCase
     {
         $paid = $this->withQueue($this->paidOrder($this->f), 5);
         $unpaid = $this->paidOrder($this->f, ['payment_status' => 'pending', 'paid_at' => null]);
+        $this->withSession(['my_orders' => [$paid->code, $unpaid->code]]);
 
         $this->getJson("/order/{$paid->code}/status")->assertOk()->assertJsonPath('queue', 'A-005');
         $this->getJson("/order/{$unpaid->code}/status")->assertOk()->assertJsonPath('queue', null);
@@ -70,6 +71,7 @@ class QueueNumberDisplayTest extends TestCase
     public function test_the_status_page_tells_takeaway_customers_to_wait_at_the_counter(): void
     {
         $order = $this->withQueue($this->paidOrder($this->f), 2, 'takeaway');
+        $this->withSession(['my_orders' => [$order->code]]);
 
         $this->get("/order/{$order->code}")->assertOk()->assertSee('B-002')->assertSee('dipanggil di kasir');
     }

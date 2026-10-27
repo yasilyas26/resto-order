@@ -63,7 +63,7 @@ class IndonesianMessagesTest extends TestCase
 
     public function test_password_rule_messages_are_short_and_friendly(): void
     {
-        $this->assertSame('Kata sandi ini terlalu umum dan pernah bocor di internet, jadi kurang aman. Coba kombinasi lain yang lebih unik.', __('validation.password.uncompromised'));
+        $this->assertSame('Kata sandi ini pernah bocor di internet. Pakai yang lain.', __('validation.password.uncompromised'));
         $this->assertSame('Gunakan kombinasi huruf besar dan huruf kecil.', __('validation.password.mixed'));
         $this->assertSame('Tambahkan minimal satu angka.', __('validation.password.numbers'));
         $this->assertStringNotContainsString('kebocoran data', __('validation.password.uncompromised'));

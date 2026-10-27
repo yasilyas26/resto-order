@@ -46,6 +46,8 @@ class GoogleLoginTest extends TestCase
         config(['services.google.client_id' => 'id', 'services.google.client_secret' => 'secret']);
 
         $provider = Mockery::mock(Provider::class);
+        // Google harus selalu menanyakan akun mana yang dipakai.
+        $provider->shouldReceive('with')->once()->with(['prompt' => 'select_account'])->andReturnSelf();
         $provider->shouldReceive('redirect')->andReturn(redirect('https://accounts.google.com/o/oauth2/auth'));
         Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
 

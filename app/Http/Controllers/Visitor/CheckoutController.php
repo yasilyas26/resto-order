@@ -59,10 +59,12 @@ class CheckoutController extends Controller
         ]);
 
         try {
-            $order = $placeOrder->execute($table, $request->user(), $data, $this->draftOrder($data['draft'] ?? null, $table));
+            $order = $placeOrder->execute($table, $request->user(), $data, $this->draftOrder($data['draft'] ?? null, $table, $request));
         } catch (InvalidCartException $e) {
             return response()->json(['message' => $e->getMessage(), 'errors' => ['items' => $e->errors]], 422);
         }
+
+        $order->rememberIn($request);
 
         // Pembayaran sengaja belum dibuka: pelanggan memilih metode dulu di halaman berikutnya, dan batas waktu
         // bayar baru mulai berjalan saat dia menekan Bayar di sana.
@@ -74,18 +76,21 @@ class CheckoutController extends Controller
     }
 
     /** Order draft yang boleh diperbarui: meja sama, belum lunas, dan pembayarannya belum pernah dimulai. */
-    private function draftOrder(?string $code, Table $table): ?Order
+    private function draftOrder(?string $code, Table $table, Request $request): ?Order
     {
         if (blank($code)) {
             return null;
         }
 
-        return Order::where('code', $code)
+        $draft = Order::where('code', $code)
             ->where('table_id', $table->id)
             ->where('payment_status', PaymentStatus::Pending)
             ->where('created_at', '>', now()->subMinutes((int) config('midtrans.expiry_minutes'))) // yang sudah dibatalkan tidak dihidupkan lagi
             ->whereDoesntHave('payments')
             ->first();
+
+        // Draft milik orang lain tidak boleh ditimpa.
+        return $draft?->isOwnedBy($request) ? $draft : null;
     }
 
     /** Membuka pembayaran lagi untuk order yang belum lunas (popup ditutup, kedaluwarsa, atau gagal). */

@@ -94,7 +94,8 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
+            // Tautan reset kedaluwarsa setelah 15 menit. Setelah dipakai, token langsung dihapus (sekali pakai).
+            'expire' => 15,
             'throttle' => 60,
         ],
     ],

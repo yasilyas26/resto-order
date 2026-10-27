@@ -15,14 +15,14 @@ class PortalLoginTest extends TestCase
         return $this->post('/portal', ['email' => $user->email, 'password' => $password, 'tab' => $tab]);
     }
 
-    public function test_portal_page_shows_both_role_tabs_and_a_way_to_the_customer_side(): void
+    public function test_portal_page_shows_both_role_tabs_without_a_link_to_the_customer_side(): void
     {
         $this->get('/portal')->assertOk()
             ->assertSee('Masuk Portal Restoran')
             ->assertSee('Karyawan')->assertSee('Admin')
             ->assertSee('Masuk ke Sistem Operasional')
             ->assertSee('Hubungi Supervisor')
-            ->assertSee('Menuju Pemesanan Pelanggan')
+            ->assertDontSee('Menuju Pemesanan Pelanggan')
             ->assertDontSee('Cabang', false);
     }
 
@@ -128,11 +128,12 @@ class PortalLoginTest extends TestCase
         $this->post('/portal/logout')->assertRedirect('/login');
     }
 
-    public function test_the_regular_login_page_still_works_for_staff_too(): void
+    public function test_the_regular_login_page_no_longer_works_for_staff(): void
     {
         $staff = User::factory()->staff()->create();
 
-        $this->post('/login', ['email' => $staff->email, 'password' => 'password'])->assertRedirect('/staff/orders');
+        $this->post('/login', ['email' => $staff->email, 'password' => 'password'])->assertSessionHasErrors('email');
+        $this->assertGuest();
     }
 
     public function test_the_portal_is_never_linked_from_customer_pages(): void

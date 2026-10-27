@@ -41,6 +41,7 @@ class OrderStatusTest extends TestCase
             'customer_name' => 'Budi Rahasia', 'customer_contact' => 'budi@rahasia.test',
             'order_type' => 'dine_in', 'subtotal' => 38000, 'total' => 38000, 'expires_at' => now()->addMinutes(15),
         ]);
+        $this->withSession(['my_orders' => ['ORD-ABCDEF']]); // browser ini pemilik order
         $item = $this->order->items()->create([
             'menu_id' => $this->f['mie']->id, 'menu_name' => 'Mie Pedas', 'unit_price' => 15000,
             'qty' => 2, 'note' => 'tanpa bawang', 'line_total' => 38000,

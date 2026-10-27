@@ -452,6 +452,7 @@ class CheckoutTest extends TestCase
     public function test_the_method_page_goes_back_to_the_cart_not_the_status_page(): void
     {
         $order = Order::create(['code' => 'ORD-ABCDEF', 'table_id' => $this->f['table']->id, 'customer_name' => 'Meja A07', 'order_type' => 'dine_in', 'subtotal' => 9500, 'total' => 9500]);
+        $this->withSession(['my_orders' => ['ORD-ABCDEF']]);
 
         $this->get('/order/ORD-ABCDEF/bayar')->assertOk()
             ->assertSee('Kembali ke keranjang pesanan')->assertSee('href="'.url('/keranjang').'"', false)

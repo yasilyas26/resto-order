@@ -42,6 +42,30 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_staff_and_admin_cannot_log_in_from_the_public_login_page(): void
+    {
+        foreach ([User::factory()->staff()->create(), User::factory()->admin()->create()] as $internal) {
+            $this->post('/login', ['email' => $internal->email, 'password' => 'password'])
+                ->assertSessionHasErrors(['email' => trans('auth.failed')]);
+
+            $this->assertGuest();
+        }
+    }
+
+    public function test_internal_accounts_tried_on_the_public_login_page_count_toward_the_lockout(): void
+    {
+        $staff = User::factory()->staff()->create();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['email' => $staff->email, 'password' => 'password']);
+        }
+
+        // Percobaan ke-6 dikunci, walaupun passwordnya benar.
+        $this->post('/login', ['email' => $staff->email, 'password' => 'password'])
+            ->assertSessionHasErrors('email');
+        $this->assertStringContainsString('detik', session('errors')->first('email'));
+    }
+
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();
