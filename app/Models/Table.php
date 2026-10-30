@@ -12,6 +12,9 @@ class Table extends Model
 {
     use SoftDeletes;
 
+    /** Berapa lama pilihan meja berlaku sejak scan, sebelum pengunjung diminta scan lagi. */
+    public const SELECTION_MINUTES = 60;
+
     // `code` sengaja tidak mass-assignable: hanya boleh dibuat lewat generateCode().
     protected $fillable = ['number', 'is_active'];
 
@@ -56,6 +59,18 @@ class Table extends Model
     {
         $id = session('table_id');
 
+        // Batas mutlak sejak scan. Sesi lama tanpa cap waktu dianggap baru mulai sekarang.
+        if ($id) {
+            $selectedAt = session('table_selected_at');
+            if (! $selectedAt) {
+                session(['table_selected_at' => now()->timestamp]);
+            } elseif (now()->timestamp - $selectedAt > static::SELECTION_MINUTES * 60) {
+                session()->forget(['table_id', 'table_selected_at']);
+                request()->cookies->remove('table_id');
+                $id = null;
+            }
+        }
+
         // Sesi bisa ganti/kosong (misalnya saat login); cookie "table_id" jadi cadangan.
         $fromCookie = false;
         if (! $id) {
@@ -66,7 +81,7 @@ class Table extends Model
         $table = $id ? static::where('is_active', true)->find($id) : null;
 
         if ($table && $fromCookie) {
-            session(['table_id' => $table->id]);
+            session(['table_id' => $table->id, 'table_selected_at' => now()->timestamp]);
         }
 
         return $table;

@@ -29,7 +29,7 @@ class OnboardingController extends Controller
     /** Tombol "Ganti meja": lupakan meja yang dipilih. Isi keranjang tetap tersimpan di perangkat. */
     public function change(Request $request): RedirectResponse
     {
-        $request->session()->forget('table_id');
+        $request->session()->forget(['table_id', 'table_selected_at']);
 
         return redirect()->route('home')->withCookie(cookie()->forget('table_id'));
     }
@@ -41,9 +41,9 @@ class OnboardingController extends Controller
             return redirect()->route('home')->withErrors(['code' => 'QR meja tidak dikenali atau meja sedang tidak aktif. Coba scan ulang.']);
         }
 
-        session(['table_id' => $table->id]);
+        session(['table_id' => $table->id, 'table_selected_at' => now()->timestamp]);
 
-        // Cadangan 6 jam kalau sesi hilang (mis. saat login). Dicek aktif tiap request lewat Table::fromSession().
-        return redirect()->route('menu')->withCookie(cookie('table_id', (string) $table->id, 360));
+        // Cadangan kalau sesi hilang (mis. saat login), umurnya sama dengan batas waktu meja.
+        return redirect()->route('menu')->withCookie(cookie('table_id', (string) $table->id, Table::SELECTION_MINUTES));
     }
 }

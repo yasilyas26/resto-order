@@ -103,6 +103,19 @@ class TableSelectionTest extends TestCase
         $this->withSession(['table_id' => $f['table']->id])->get('/menu')->assertRedirect('/');
     }
 
+    public function test_table_choice_expires_after_the_time_limit(): void
+    {
+        $f = $this->menuFixture();
+        $stale = now()->subMinutes(Table::SELECTION_MINUTES + 1)->timestamp;
+        $fresh = now()->subMinutes(Table::SELECTION_MINUTES - 1)->timestamp;
+
+        $this->withSession(['table_id' => $f['table']->id, 'table_selected_at' => $fresh])
+            ->get('/menu')->assertOk();
+
+        $this->withSession(['table_id' => $f['table']->id, 'table_selected_at' => $stale])
+            ->get('/menu')->assertRedirect('/');
+    }
+
     public function test_onboarding_skips_straight_to_the_menu_when_a_table_is_already_chosen(): void
     {
         $f = $this->menuFixture();
