@@ -73,10 +73,10 @@ Route::middleware('order.owner')->group(function () {
 Route::post('/payments/midtrans/notification', MidtransNotificationController::class)->name('payments.midtrans.notification');
 
 // Login Google (khusus pelanggan).
-Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->middleware('guest')->name('auth.google');
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->middleware(['guest', 'throttle:5,5'])->name('auth.google');
 // Callback dipakai dua keperluan: login (tamu) dan konfirmasi hapus akun (sudah login), jadi tanpa middleware guest.
 // Alamatnya sama, jadi tidak perlu mendaftarkan redirect URI baru di Google Cloud Console.
-Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->middleware('throttle:5,5')->name('auth.google.callback');
 Route::get('/auth/google/konfirmasi-hapus', [GoogleAuthController::class, 'confirmDelete'])->middleware('auth')->name('auth.google.confirm-delete');
 
 // Halaman bawaan Breeze. Pelanggan yang baru login/daftar diarahkan ke riwayat.
@@ -146,7 +146,7 @@ Route::middleware(['auth', 'role:admin,staff'])
 // Login khusus karyawan dan admin. Alamat ini tidak pernah ditautkan dari halaman pengunjung.
 Route::middleware('guest')->group(function () {
     Route::get('/portal', [PortalController::class, 'show'])->name('portal.login');
-    Route::post('/portal', [PortalController::class, 'store']);
+    Route::post('/portal', [PortalController::class, 'store'])->middleware('throttle:5,5');
 });
 Route::post('/portal/logout', [PortalController::class, 'logout'])->middleware('auth')->name('portal.logout');
 

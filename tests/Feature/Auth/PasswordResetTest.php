@@ -12,6 +12,15 @@ class PasswordResetTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_forgot_password_is_limited_to_five_attempts_per_five_minutes(): void
+    {
+        for ($i = 1; $i <= 5; $i++) {
+            $this->post('/forgot-password', ['email' => "orang$i@example.com"]);
+        }
+
+        $this->post('/forgot-password', ['email' => 'orang6@example.com'])->assertStatus(429);
+    }
+
     public function test_reset_password_link_screen_can_be_rendered(): void
     {
         $response = $this->get('/forgot-password');

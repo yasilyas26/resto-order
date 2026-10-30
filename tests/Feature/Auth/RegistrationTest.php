@@ -28,4 +28,13 @@ class RegistrationTest extends TestCase
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
     }
+
+    public function test_register_is_limited_to_five_attempts_per_five_minutes(): void
+    {
+        for ($i = 1; $i <= 5; $i++) {
+            $this->post('/register', ['email' => "bukan-email-$i"])->assertSessionHasErrors();
+        }
+
+        $this->post('/register', ['email' => 'bukan-email-6'])->assertStatus(429);
+    }
 }

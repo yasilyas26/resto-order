@@ -34,6 +34,17 @@ class GoogleLoginTest extends TestCase
         Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
     }
 
+    public function test_google_login_is_limited_to_five_attempts_per_five_minutes(): void
+    {
+        config(['services.google.client_id' => null, 'services.google.client_secret' => null]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->get('/auth/google')->assertRedirect('/login');
+        }
+
+        $this->get('/auth/google')->assertStatus(429);
+    }
+
     public function test_redirect_explains_when_google_is_not_configured(): void
     {
         config(['services.google.client_id' => null, 'services.google.client_secret' => null]);

@@ -25,7 +25,7 @@ export default {
                 inter: ['Inter', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-                // Warna merek halaman pelanggan (merah-oranye "Mie Gacor").
+                // Warna merek halaman pelanggan (merah-oranye "MieGacoy").
                 brand: {
                     50: '#fff6f4',
                     100: '#ffe7e2',

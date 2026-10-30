@@ -54,7 +54,7 @@ class AdminTransactionTest extends TestCase
     {
         return array_merge([
             'category_id' => $this->category->id,
-            'name' => 'Mie Gacor',
+            'name' => 'MieGacoy',
             'price' => 15000,
             'is_available' => '1',
             'option_groups' => [$this->group->id],

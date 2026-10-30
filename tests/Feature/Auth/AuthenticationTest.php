@@ -62,8 +62,19 @@ class AuthenticationTest extends TestCase
 
         // Percobaan ke-6 dikunci, walaupun passwordnya benar.
         $this->post('/login', ['email' => $staff->email, 'password' => 'password'])
-            ->assertSessionHasErrors('email');
-        $this->assertStringContainsString('detik', session('errors')->first('email'));
+            ->assertStatus(429);
+        $this->assertGuest();
+    }
+
+    public function test_login_is_limited_to_five_attempts_per_ip_even_with_different_emails(): void
+    {
+        for ($i = 1; $i <= 5; $i++) {
+            $this->post('/login', ['email' => "orang$i@example.com", 'password' => 'salah'])
+                ->assertSessionHasErrors('email');
+        }
+
+        $this->post('/login', ['email' => 'orang6@example.com', 'password' => 'salah'])
+            ->assertStatus(429);
     }
 
     public function test_users_can_logout(): void

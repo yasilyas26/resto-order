@@ -26,7 +26,7 @@
         @include('visitor.partials.footer')
     </div>
 
-    {{-- Pemberitahuan singkat (mis. "Mie Gacor ditambahkan ke keranjang") --}}
+    {{-- Pemberitahuan singkat (mis. "MieGacoy ditambahkan ke keranjang") --}}
     <div x-data x-cloak x-show="$store.cart.toast"
         x-transition.opacity
         class="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex justify-center px-4 lg:bottom-8">

@@ -93,8 +93,19 @@ class PortalLoginTest extends TestCase
             $this->login($staff, 'staff', 'salah')->assertSessionHasErrors('email');
         }
 
-        $this->login($staff, 'staff', 'password')->assertSessionHasErrors('email');
-        $this->assertGuest(); // walau passwordnya benar, akun sedang dikunci
+        $this->login($staff, 'staff', 'password')->assertStatus(429);
+        $this->assertGuest(); // walau passwordnya benar, sedang dikunci
+    }
+
+    public function test_portal_is_limited_to_five_attempts_per_ip_even_with_different_emails(): void
+    {
+        for ($i = 1; $i <= 5; $i++) {
+            $this->post('/portal', ['email' => "orang$i@example.com", 'password' => 'salah', 'tab' => 'staff'])
+                ->assertSessionHasErrors('email');
+        }
+
+        $this->post('/portal', ['email' => 'orang6@example.com', 'password' => 'salah', 'tab' => 'staff'])
+            ->assertStatus(429);
     }
 
     public function test_role_mismatches_also_count_toward_the_lockout(): void
@@ -105,9 +116,7 @@ class PortalLoginTest extends TestCase
             $this->login($customer, 'staff')->assertSessionHasErrors('email');
         }
 
-        $staffTab = $this->login($customer, 'staff');
-        $staffTab->assertSessionHasErrors('email');
-        $this->assertStringContainsString('Terlalu banyak', $staffTab->getSession()->get('errors')->first('email'));
+        $this->login($customer, 'staff')->assertStatus(429);
     }
 
     public function test_a_logged_in_staff_member_is_sent_straight_to_the_board(): void
