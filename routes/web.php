@@ -42,7 +42,8 @@ Route::middleware(['visitor', 'table'])->group(function () {
     Route::get('/keranjang', [VisitorMenuController::class, 'cart'])->name('cart');
 
     // Riwayat hanya untuk pelanggan yang login: tamu tidak punya riwayat (tamu dialihkan ke halaman login).
-    Route::middleware('auth')->group(function () {
+    // Akun yang emailnya belum diverifikasi diarahkan ke halaman "cek email".
+    Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/riwayat', [OrderHistoryController::class, 'index'])->name('riwayat');
         Route::post('/riwayat/lookup', [OrderHistoryController::class, 'lookup'])->middleware('throttle:30,1')->name('riwayat.lookup');
         Route::get('/riwayat/data', [OrderHistoryController::class, 'data'])->name('riwayat.data');
@@ -80,9 +81,9 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->
 Route::get('/auth/google/konfirmasi-hapus', [GoogleAuthController::class, 'confirmDelete'])->middleware('auth')->name('auth.google.confirm-delete');
 
 // Halaman bawaan Breeze. Pelanggan yang baru login/daftar diarahkan ke riwayat.
-Route::get('/dashboard', fn () => redirect()->route('riwayat'))->middleware('auth')->name('dashboard');
+Route::get('/dashboard', fn () => redirect()->route('riwayat'))->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
