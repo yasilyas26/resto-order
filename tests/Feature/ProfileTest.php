@@ -23,7 +23,9 @@ class ProfileTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
+        \Illuminate\Support\Facades\Notification::fake();
         $user = User::factory()->create();
+        $user->issueEmailVerificationCode(); // sisa kode dari email lama harus dibuang
 
         $response = $this
             ->actingAs($user)
@@ -32,15 +34,31 @@ class ProfileTest extends TestCase
                 'email' => 'test@example.com',
             ]);
 
+        // Email berubah: kode baru dikirim ke email baru dan user langsung diarahkan ke halaman verifikasi.
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect(route('verification.notice', absolute: false));
 
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
+        $this->assertNotNull($user->email_verification_code);
+        \Illuminate\Support\Facades\Notification::assertSentTo($user, \App\Notifications\VerifyEmailCode::class);
+    }
+
+    public function test_changing_only_the_name_does_not_reset_verification_or_send_a_code(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->patch('/profile', ['name' => 'Nama Baru', 'email' => $user->email])
+            ->assertRedirect('/profile');
+
+        $this->assertNotNull($user->refresh()->email_verified_at);
+        \Illuminate\Support\Facades\Notification::assertNothingSent();
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void

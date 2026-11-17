@@ -3,7 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Notifications\VerifyEmailCode;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -45,7 +45,8 @@ class RegistrationTest extends TestCase
 
         $user = User::where('email', 'test@gmail.com')->firstOrFail();
         $this->assertNull($user->email_verified_at);
-        Notification::assertSentTo($user, VerifyEmail::class);
+        Notification::assertSentTo($user, VerifyEmailCode::class);
+        $this->assertNotNull($user->email_verification_code);
     }
 
     public function test_an_unverified_account_is_sent_to_the_verify_email_page(): void
@@ -57,19 +58,6 @@ class RegistrationTest extends TestCase
         }
 
         $this->actingAs($user)->get(route('verification.notice'))->assertOk();
-    }
-
-    public function test_the_verification_link_marks_the_email_as_verified(): void
-    {
-        $user = User::factory()->unverified()->create(['email' => 'belum@gmail.com']);
-
-        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
-            'verification.verify', now()->addMinutes(60), ['id' => $user->id, 'hash' => sha1($user->email)],
-        );
-
-        $this->actingAs($user)->get($url)->assertRedirect();
-
-        $this->assertNotNull($user->fresh()->email_verified_at);
     }
 
     public function test_only_gmail_addresses_can_register(): void

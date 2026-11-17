@@ -25,11 +25,25 @@ class ProfileController extends Controller
             return redirect()->route('profile.edit')->with('feedback', ['type' => 'info', 'title' => 'Tidak ada perubahan', 'message' => 'Nama dan emailmu masih sama, jadi tidak ada yang disimpan.']);
         }
 
-        if ($request->user()->isDirty('email')) {
+        $emailChanged = $request->user()->isDirty('email');
+
+        if ($emailChanged) {
+            // Email baru belum terbukti milik user: cabut status verifikasi dan buang kode lama (milik email lama).
             $request->user()->email_verified_at = null;
+            $request->user()->email_verification_code = null;
+            $request->user()->email_verification_expires_at = null;
+            $request->user()->email_verification_attempts = 0;
         }
 
         $request->user()->save();
+
+        if ($emailChanged) {
+            // Kirim kode ke email BARU, lalu arahkan ke halaman verifikasi. Tanpa ini user terlempar ke
+            // /verify-email tanpa kode apa pun dan harus menebak harus klik "Kirim Ulang".
+            $request->user()->sendEmailVerificationNotification();
+
+            return redirect()->route('verification.notice')->with('status', 'verification-code-sent');
+        }
 
         return redirect()->route('profile.edit')->with('status', 'profile-updated');
     }

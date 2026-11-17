@@ -7,6 +7,7 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -41,6 +42,7 @@ class LoginRequest extends FormRequest
      */
     public function authenticate(): void
     {
+        $this->ensureIpIsNotRateLimited();
         $this->ensureIsNotRateLimited();
 
         $loggedIn = Auth::attempt($this->only('email', 'password'), $this->boolean('remember'));
@@ -57,6 +59,7 @@ class LoginRequest extends FormRequest
 
         if (! $loggedIn) {
             RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->ipThrottleKey(), self::IP_DECAY_SECONDS);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -87,6 +90,34 @@ class LoginRequest extends FormRequest
                 'minutes' => ceil($seconds / 60),
             ]),
         ]);
+    }
+
+    /** Maksimal 5 login GAGAL per IP dalam 5 menit, berapa pun emailnya (menahan tebak-tebak ganti-ganti email). */
+    private const IP_MAX_FAILURES = 5;
+    private const IP_DECAY_SECONDS = 300;
+
+    /**
+     * Hanya kegagalan yang dihitung: membuka halaman login atau login berhasil tidak memakai jatah.
+     * Sengaja tidak di-clear saat sukses, supaya penyerang tidak bisa mereset hitungan dengan login ke akunnya sendiri.
+     *
+     * @throws ThrottleRequestsException
+     */
+    public function ensureIpIsNotRateLimited(): void
+    {
+        if (! RateLimiter::tooManyAttempts($this->ipThrottleKey(), self::IP_MAX_FAILURES)) {
+            return;
+        }
+
+        throw new ThrottleRequestsException(
+            'Too Many Requests',
+            null,
+            ['Retry-After' => RateLimiter::availableIn($this->ipThrottleKey())],
+        );
+    }
+
+    public function ipThrottleKey(): string
+    {
+        return 'login-ip|'.$this->ip();
     }
 
     /**

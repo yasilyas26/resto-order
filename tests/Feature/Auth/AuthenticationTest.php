@@ -77,6 +77,20 @@ class AuthenticationTest extends TestCase
             ->assertStatus(429);
     }
 
+    public function test_successful_logins_and_page_views_do_not_use_up_the_limit(): void
+    {
+        $user = User::factory()->create();
+
+        for ($i = 0; $i < 8; $i++) {
+            $this->get('/login')->assertOk();
+            $this->post('/login', ['email' => $user->email, 'password' => 'password'])->assertRedirect();
+            $this->post('/logout');
+        }
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'password'])->assertRedirect();
+        $this->assertAuthenticated();
+    }
+
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();
